@@ -1,1 +1,94 @@
-{% extends "base.html" %}
+{% extends 'base.html' %} {% block title %} Home {% endblock %} {% block body %}
+<div
+  class="d-flex justify-content-center align-items-center"
+  style="min-height: 100vh"
+>
+  <form class="row g-3 text-center">
+    <div class="col-12">
+      <div class="input-group">
+        <input
+          type="password"
+          class="form-control"
+          id="inputPassword2"
+          placeholder="Write PGN"
+        />
+        <button
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          id="dropdownMenuButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          PGN
+        </button>
+        <ul
+          class="dropdown-menu dropdown-menu-end"
+          aria-labelledby="dropdownMenuButton"
+        >
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              onclick="updatePlaceholder('PGN')"
+            >
+              PGN
+            </button>
+          </li>
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              onclick="updatePlaceholder('Chess.com')"
+            >
+              Chess.com
+            </button>
+          </li>
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              onclick="updatePlaceholder('Lichess.org')"
+            >
+              Lichess.org
+            </button>
+          </li>
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              onclick="updatePlaceholder('JSON')"
+            >
+              JSON
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Analyze Button -->
+    <div class="col-12 d-grid">
+      <button type="button" class="btn btn-outline-success">Analyze</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  function updatePlaceholder(option) {
+    let placeholderText = {
+      "Chess.com": "Username of Chess.com",
+      "Lichess.org": "Username of Lichess.org",
+      PGN: "Write PGN",
+      JSON: "Write JSON",
+    };
+
+    document.getElementById("inputPassword2").placeholder =
+      placeholderText[option] || "Enter value";
+    document.getElementById("dropdownMenuButton").textContent = option;
+  }
+
+  // Set default placeholder and dropdown text to PGN
+  document.addEventListener("DOMContentLoaded", function () {
+    updatePlaceholder("PGN");
+  });
+</script>
+{% endblock %}
