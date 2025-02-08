@@ -7,9 +7,9 @@
     <div class="col-12">
       <div class="input-group">
         <input
-          type="password"
+          type="text"
           class="form-control"
-          id="inputPassword2"
+          id="inputField"
           placeholder="Write PGN"
         />
         <button
@@ -62,18 +62,74 @@
             </button>
           </li>
         </ul>
+        <button
+          class="btn btn-outline-primary d-none"
+          id="fetchButton"
+          type="button"
+          onclick="fetchGame()"
+        >
+          ➜
+        </button>
       </div>
+    </div>
+
+    <!-- Selected Game Display -->
+    <div class="col-12" id="selectedGameContainer" style="display: none">
+      <div class="alert alert-info text-center" id="selectedGameText"></div>
     </div>
 
     <!-- Analyze Button -->
     <div class="col-12 d-grid">
-      <button type="button" class="btn btn-outline-success">Analyze</button>
+      <button type="button" class="btn btn-outline-success" id="analyzeButton">
+        Analyze
+      </button>
     </div>
   </form>
 </div>
 
+<!-- Modal for displaying games -->
+<div
+  class="modal fade"
+  id="gameModal"
+  tabindex="-1"
+  aria-labelledby="gameModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="gameModalLabel">
+          Select a Game for Analysis
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <button
+          class="btn btn-primary mb-3 w-100 d-none"
+          id="confirmSelection"
+          onclick="confirmGameSelection()"
+        >
+          Select Game
+        </button>
+        <ul class="list-group" id="gameList"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+  let selectedPlatform = "PGN";
+  let selectedPGN = "";
+  let selectedGameIndex = -1;
+  let gameData = [];
+
   function updatePlaceholder(option) {
+    selectedPlatform = option;
     let placeholderText = {
       "Chess.com": "Username of Chess.com",
       "Lichess.org": "Username of Lichess.org",
@@ -81,12 +137,141 @@
       JSON: "Write JSON",
     };
 
-    document.getElementById("inputPassword2").placeholder =
-      placeholderText[option] || "Enter value";
+    let inputField = document.getElementById("inputField");
+    let fetchButton = document.getElementById("fetchButton");
+
+    inputField.placeholder = placeholderText[option] || "Enter value";
     document.getElementById("dropdownMenuButton").textContent = option;
+
+    if (option === "Chess.com" || option === "Lichess.org") {
+      fetchButton.classList.remove("d-none");
+    } else {
+      fetchButton.classList.add("d-none");
+    }
   }
 
-  // Set default placeholder and dropdown text to PGN
+  async function fetchGame() {
+    let username = document.getElementById("inputField").value.trim();
+    if (!username) {
+      alert("Please enter a username.");
+      return;
+    }
+
+    let apiUrl = "";
+    let maxGames = 0;
+
+    if (selectedPlatform === "Chess.com") {
+      apiUrl = `https://api.chess.com/pub/player/${username}/games/archives`;
+      maxGames = 300;
+    } else if (selectedPlatform === "Lichess.org") {
+      apiUrl = `https://lichess.org/api/games/user/${username}?max=100&clocks=true&pgnInJson=true`;
+      maxGames = 100;
+    }
+
+    try {
+      gameData = [];
+
+      if (selectedPlatform === "Chess.com") {
+        let archivesResponse = await fetch(apiUrl);
+        let archivesData = await archivesResponse.json();
+        let latestArchives = archivesData.archives.slice(-5);
+
+        let gameRequests = latestArchives.map((url) =>
+          fetch(url).then((res) => res.json())
+        );
+        let gameDetails = await Promise.all(gameRequests);
+
+        gameDetails.forEach((monthData) => {
+          monthData.games.forEach((game) => {
+            if (gameData.length < maxGames) {
+              gameData.push({
+                user: game.white.username,
+                opponent: game.black.username,
+                time: new Date(game.end_time * 1000),
+                pgn: game.pgn,
+              });
+            }
+          });
+        });
+      } else if (selectedPlatform === "Lichess.org") {
+        let response = await fetch(apiUrl);
+        let textData = await response.text();
+        let lines = textData.split("\n").filter((line) => line.trim() !== "");
+
+        lines.forEach((line) => {
+          try {
+            let game = JSON.parse(line);
+            if (gameData.length < maxGames) {
+              gameData.push({
+                user: game.players.white.userId,
+                opponent: game.players.black.userId,
+                time: new Date(game.createdAt),
+                pgn: game.pgn,
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing Lichess game data:", e);
+          }
+        });
+      }
+
+      gameData.sort((a, b) => b.time - a.time);
+      displayGames(gameData);
+    } catch (error) {
+      console.error("Error fetching game data:", error);
+      alert("Failed to fetch game data. Check the username and try again.");
+    }
+  }
+
+  function displayGames(games) {
+    let gameList = document.getElementById("gameList");
+    gameList.innerHTML = "";
+
+    if (games.length === 0) {
+      gameList.innerHTML =
+        "<li class='list-group-item'>No recent games found.</li>";
+    } else {
+      games.forEach((game, index) => {
+        let listItem = document.createElement("li");
+        listItem.className = "list-group-item";
+        listItem.innerHTML = `
+          <input type="radio" name="selectedGame" id="game${index}" value="${index}" onclick="selectGame(${index})">
+          <label for="game${index}">
+            <strong>${game.user} vs ${game.opponent}</strong><br>
+            <small>${game.time.toLocaleString()}</small>
+          </label>
+        `;
+        gameList.appendChild(listItem);
+      });
+
+      document.getElementById("confirmSelection").classList.add("d-none");
+    }
+
+    let gameModal = new bootstrap.Modal(document.getElementById("gameModal"));
+    gameModal.show();
+  }
+
+  function selectGame(index) {
+    selectedGameIndex = index;
+    document.getElementById("confirmSelection").classList.remove("d-none");
+  }
+
+  function confirmGameSelection() {
+    let game = gameData[selectedGameIndex];
+    selectedPGN = game.pgn;
+
+    document.getElementById(
+      "selectedGameText"
+    ).innerHTML = `<strong>Selected Game:</strong> ${game.user} vs ${
+      game.opponent
+    } <br> <small>${game.time.toLocaleString()}</small>`;
+    document.getElementById("selectedGameContainer").style.display = "block";
+
+    let gameModalElement = document.getElementById("gameModal");
+    let gameModal = bootstrap.Modal.getInstance(gameModalElement);
+    gameModal.hide();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     updatePlaceholder("PGN");
   });

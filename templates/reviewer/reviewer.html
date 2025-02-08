@@ -1,27 +1,79 @@
-{% extends "base.html" %} {% block title %} Home {% endblock title %} {% block
-body %}
-<form class="row g-3">
-  <div class="col-auto">
-    <label for="staticEmail2" class="visually-hidden">Email</label>
-    <input
-      type="text"
-      readonly
-      class="form-control-plaintext"
-      id="staticEmail2"
-      value="email@example.com"
-    />
-  </div>
-  <div class="col-auto">
-    <label for="inputPassword2" class="visually-hidden">Password</label>
-    <input
-      type="password"
-      class="form-control"
-      id="inputPassword2"
-      placeholder="Password"
-    />
-  </div>
-  <div class="col-auto">
-    <button type="submit" class="btn btn-primary mb-3">Confirm identity</button>
-  </div>
-</form>
-{% endblock body %}
+{% extends "base.html" %} {% block title %} Home {% endblock %} {% block head %}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chess Game</title>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/css/chessboard.min.css"
+/>
+<!-- Load jQuery first -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Load chessboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboardjs/1.0.0/chessboard.min.js"></script>
+
+<!-- Load chess.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+
+<style>
+  #board {
+    width: 400px;
+    margin: 0 auto;
+  }
+  .controls {
+    text-align: center;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %} {% block body %}
+<h1 class="text-center">Chess Game</h1>
+<div id="board"></div>
+
+<div class="controls">
+  <button id="clearBoard" class="btn btn-primary">Clear Board</button>
+  <button id="startPosition" class="btn btn-secondary">Start Position</button>
+  <button id="undoMove" class="btn btn-success">Undo Move</button>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const board = Chessboard("board", {
+      draggable: true,
+      position: "start",
+    });
+  });
+
+  function handleMove(source, target) {
+    const move = game.move({
+      from: source,
+      to: target,
+      promotion: "q", // Auto-promote to a queen
+    });
+
+    if (move === null) return "snapback"; // Invalid move
+
+    board.position(game.fen()); // Update board position
+    console.log("Move History:", game.history().join(", "));
+  }
+
+  // Reset board to initial position
+  document
+    .getElementById("startPosition")
+    .addEventListener("click", function () {
+      game.reset();
+      board.start();
+    });
+
+  // Clear the board
+  document.getElementById("clearBoard").addEventListener("click", function () {
+    game.clear();
+    board.clear();
+  });
+
+  // Undo the last move
+  document.getElementById("undoMove").addEventListener("click", function () {
+    game.undo();
+    board.position(game.fen());
+  });
+</script>
+{% endblock %}
