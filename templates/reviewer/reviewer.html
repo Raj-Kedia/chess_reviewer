@@ -1,79 +1,130 @@
-{% extends "base.html" %} {% block title %} Home {% endblock %} {% block head %}
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block head %}
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Chess Game</title>
+<title>Chess Reviewer</title>
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/css/chessboard.min.css"
 />
-<!-- Load jQuery first -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-<!-- Load chessboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboardjs/1.0.0/chessboard.min.js"></script>
-
-<!-- Load chess.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
-
 <style>
+  .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+  }
   #board {
     width: 400px;
-    margin: 0 auto;
+  }
+  .review-panel {
+    width: 40%;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+  }
+  .move-list {
+    height: 300px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
   }
   .controls {
-    text-align: center;
-    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+  }
+  .controls button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
   }
 </style>
 {% endblock %} {% block body %}
-<h1 class="text-center">Chess Game</h1>
-<div id="board"></div>
-
-<div class="controls">
-  <button id="clearBoard" class="btn btn-primary">Clear Board</button>
-  <button id="startPosition" class="btn btn-secondary">Start Position</button>
-  <button id="undoMove" class="btn btn-success">Undo Move</button>
+<h1 class="text-center">Chess Reviewer</h1>
+<div class="container">
+  <div id="board"></div>
+  <div class="review-panel">
+    <h3>Move History</h3>
+    <div class="move-list" id="moveHistory"></div>
+    <div class="controls">
+      <button id="flipBoard" title="Flip Board">
+        <i class="fa fa-retweet"></i>
+      </button>
+      <button id="startPosition" title="Go to Start Position">
+        <i class="fa fa-fast-backward"></i>
+      </button>
+      <button id="undoMove" title="Undo Move">
+        <i class="fa fa-backward"></i>
+      </button>
+      <button id="redoMove" title="Redo Move">
+        <i class="fa fa-forward"></i>
+      </button>
+      <button id="endPosition" title="Go to Last Move">
+        <i class="fa fa-fast-forward"></i>
+      </button>
+    </div>
+  </div>
 </div>
-
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const game = new Chess();
     const board = Chessboard("board", {
       draggable: true,
       position: "start",
-    });
-  });
-
-  function handleMove(source, target) {
-    const move = game.move({
-      from: source,
-      to: target,
-      promotion: "q", // Auto-promote to a queen
+      onDrop: handleMove,
     });
 
-    if (move === null) return "snapback"; // Invalid move
+    function handleMove(source, target) {
+      const move = game.move({
+        from: source,
+        to: target,
+        promotion: "q",
+      });
+      if (move === null) return "snapback";
+      board.position(game.fen());
+      updateHistory();
+    }
 
-    board.position(game.fen()); // Update board position
-    console.log("Move History:", game.history().join(", "));
-  }
+    function updateHistory() {
+      const history = game.history().join(", ");
+      document.getElementById("moveHistory").innerText = history;
+    }
 
-  // Reset board to initial position
-  document
-    .getElementById("startPosition")
-    .addEventListener("click", function () {
-      game.reset();
-      board.start();
+    document.getElementById("flipBoard").addEventListener("click", function () {
+      board.flip();
     });
 
-  // Clear the board
-  document.getElementById("clearBoard").addEventListener("click", function () {
-    game.clear();
-    board.clear();
-  });
+    document
+      .getElementById("startPosition")
+      .addEventListener("click", function () {
+        game.reset();
+        board.start();
+        updateHistory();
+      });
 
-  // Undo the last move
-  document.getElementById("undoMove").addEventListener("click", function () {
-    game.undo();
-    board.position(game.fen());
+    document.getElementById("undoMove").addEventListener("click", function () {
+      game.undo();
+      board.position(game.fen());
+      updateHistory();
+    });
+
+    document.getElementById("redoMove").addEventListener("click", function () {
+      // Implement move redo logic if needed
+    });
+
+    document
+      .getElementById("endPosition")
+      .addEventListener("click", function () {
+        // Implement logic to go to the last move
+      });
   });
 </script>
 {% endblock %}
