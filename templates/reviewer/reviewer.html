@@ -4,15 +4,22 @@
 <title>Chess Reviewer</title>
 <link
   rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/css/chessboard.min.css"
+  href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"
 />
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
 />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboardjs/1.0.0/chessboard.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+<audio id="moveSound" src="/static/media/move.mp3"></audio>
+<audio id="gameEnd" src="/static/media/game_end.mp3"></audio>
+<audio id="castleSound" src="/static/media/castle.mp3"></audio>
+<audio id="checkSound" src="/static/media/check.mp3"></audio>
+<audio id="captureSound" src="/static/media/capture.mp3"></audio>
+<audio id="promoteSound" src="/static/media/promote.mp3"></audio>
+<audio id="absolutePinSound" src="/static/media/absolute_pin.mp3"></audio>
 <style>
   .container {
     display: flex;
@@ -34,6 +41,7 @@
     overflow-y: auto;
     border-bottom: 1px solid #ccc;
     padding: 10px;
+    text-align: left;
   }
   .controls {
     display: flex;
@@ -45,6 +53,9 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
+  }
+  .highlight-square {
+    background-color: rgba(255, 255, 0, 0.5) !important;
   }
 </style>
 {% endblock %} {% block body %}
@@ -76,9 +87,18 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const game = new Chess();
+    let moveHistoryStack = [];
+    let currentMoveIndex = 0;
+    let selectedSquare = null;
+    const moveSound = document.getElementById("moveSound");
+    const checkmateSound = document.getElementById("checkmateSound");
+    const stalemateSound = document.getElementById("stalemateSound");
     const board = Chessboard("board", {
       draggable: true,
       position: "start",
+      pieceTheme:
+        "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
+      onDragStart: highlightMoves,
       onDrop: handleMove,
     });
 
@@ -89,13 +109,57 @@
         promotion: "q",
       });
       if (move === null) return "snapback";
+      selectedSquare = null;
+      moveHistoryStack = game.history({ verbose: true });
+      currentMoveIndex = moveHistoryStack.length;
       board.position(game.fen());
       updateHistory();
+      playSound();
     }
 
+    function playSound() {
+      if (game.in_checkmate() || game.in_stalemate()) {
+        gameEnd.play();
+      } else {
+        moveSound.play();
+      }
+    }
+
+    function highlightMoves(source) {
+      clearHighlights();
+      selectedSquare = source;
+      const moves = game.moves({ square: source, verbose: true });
+      moves.forEach((move) => {
+        $(`.square-${move.to}`).addClass("highlight-square");
+      });
+    }
+
+    function clearHighlights() {
+      $(".square-55d63").removeClass("highlight-square");
+    }
+
+    $("#board").on("click", ".square", function () {
+      const clickedSquare = $(this).attr("data-square");
+
+      if (clickedSquare === selectedSquare) {
+        clearHighlights(); // If clicking the same square, just clear highlights
+        selectedSquare = null;
+      } else {
+        selectedSquare = clickedSquare;
+        clearHighlights();
+        highlightMoves(clickedSquare);
+      }
+    });
+
     function updateHistory() {
-      const history = game.history().join(", ");
-      document.getElementById("moveHistory").innerText = history;
+      let history = game.history({ verbose: true });
+      let formattedHistory = "";
+      for (let i = 0; i < history.length; i += 2) {
+        let whiteMove = history[i] ? history[i].san : "";
+        let blackMove = history[i + 1] ? history[i + 1].san : "";
+        formattedHistory += `${i / 2 + 1}. ${whiteMove} ${blackMove}<br>`;
+      }
+      document.getElementById("moveHistory").innerHTML = formattedHistory;
     }
 
     document.getElementById("flipBoard").addEventListener("click", function () {
@@ -105,25 +169,37 @@
     document
       .getElementById("startPosition")
       .addEventListener("click", function () {
+        currentMoveIndex = 0;
         game.reset();
-        board.start();
-        updateHistory();
+        board.position("start");
       });
 
     document.getElementById("undoMove").addEventListener("click", function () {
-      game.undo();
-      board.position(game.fen());
-      updateHistory();
+      if (currentMoveIndex > 0) {
+        currentMoveIndex--;
+        game.reset();
+        for (let i = 0; i < currentMoveIndex; i++) {
+          game.move(moveHistoryStack[i]);
+        }
+        board.position(game.fen());
+      }
     });
 
     document.getElementById("redoMove").addEventListener("click", function () {
-      // Implement move redo logic if needed
+      if (currentMoveIndex < moveHistoryStack.length) {
+        game.move(moveHistoryStack[currentMoveIndex]);
+        currentMoveIndex++;
+        board.position(game.fen());
+      }
     });
 
     document
       .getElementById("endPosition")
       .addEventListener("click", function () {
-        // Implement logic to go to the last move
+        game.reset();
+        moveHistoryStack.forEach((move) => game.move(move));
+        currentMoveIndex = moveHistoryStack.length;
+        board.position(game.fen());
       });
   });
 </script>
