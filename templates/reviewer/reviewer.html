@@ -19,7 +19,7 @@
 <audio id="checkSound" src="/static/media/check.mp3"></audio>
 <audio id="captureSound" src="/static/media/capture.mp3"></audio>
 <audio id="promoteSound" src="/static/media/promote.mp3"></audio>
-<audio id="absolutePinSound" src="/static/media/absolute_pin.mp3"></audio>
+<audio id="illegalSound" src="/static/media/illegal.mp3"></audio>
 <style>
   .container {
     display: flex;
@@ -90,9 +90,9 @@
     let moveHistoryStack = [];
     let currentMoveIndex = 0;
     let selectedSquare = null;
-    const moveSound = document.getElementById("moveSound");
+    /*const moveSound = document.getElementById("moveSound");
     const checkmateSound = document.getElementById("checkmateSound");
-    const stalemateSound = document.getElementById("stalemateSound");
+    const stalemateSound = document.getElementById("stalemateSound");*/
     const board = Chessboard("board", {
       draggable: true,
       position: "start",
@@ -103,23 +103,41 @@
     });
 
     function handleMove(source, target) {
+      //console.log(source, target);
       const move = game.move({
         from: source,
         to: target,
         promotion: "q",
       });
-      if (move === null) return "snapback";
+      if (move === null) {
+        playSound();
+        return "snapback";
+      }
       selectedSquare = null;
       moveHistoryStack = game.history({ verbose: true });
       currentMoveIndex = moveHistoryStack.length;
       board.position(game.fen());
       updateHistory();
-      playSound();
+      playSound(move);
     }
 
-    function playSound() {
+    function playSound(move) {
+      console.log(move);
+      if (!move) {
+        illegalSound.play();
+        return;
+      }
+
       if (game.in_checkmate() || game.in_stalemate()) {
         gameEnd.play();
+      } else if (move.san.includes("+")) {
+        checkSound.play();
+      } else if (move.san.includes("x")) {
+        captureSound.play();
+      } else if (move.san === "O-O" || move.san === "O-O-O") {
+        castleSound.play();
+      } else if (move.san.includes("=")) {
+        promoteSound.play();
       } else {
         moveSound.play();
       }
@@ -182,6 +200,7 @@
           game.move(moveHistoryStack[i]);
         }
         board.position(game.fen());
+        playSound(move);
       }
     });
 
@@ -190,6 +209,7 @@
         game.move(moveHistoryStack[currentMoveIndex]);
         currentMoveIndex++;
         board.position(game.fen());
+        playSound(move);
       }
     });
 
