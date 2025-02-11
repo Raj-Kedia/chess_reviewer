@@ -79,10 +79,24 @@
     </div>
 
     <!-- Analyze Button -->
+    <!-- Analyze Button -->
+    <!-- Analyze Button -->
     <div class="col-12 d-grid">
-      <button type="button" class="btn btn-outline-success" id="analyzeButton">
+      <button
+        type="button"
+        class="btn btn-outline-success"
+        id="analyzeButton"
+        onclick="parsePGN()"
+      >
         Analyze
       </button>
+    </div>
+
+    <!-- PGN Parsed Notification (Hidden Initially) -->
+    <div class="col-12 text-center mt-2">
+      <small id="pgnParsedMessage" class="text-success" style="display: none">
+        ✅ PGN parsed successfully!
+      </small>
     </div>
   </form>
 </div>
@@ -275,5 +289,16 @@
   document.addEventListener("DOMContentLoaded", function () {
     updatePlaceholder("PGN");
   });
+  function parsePGN() {
+    if (!selectedPGN) {
+      return;
+    }
+
+    // Show the PGN parsed message
+    let message = document.getElementById("pgnParsedMessage");
+    message.style.display = "block";
+
+    console.log("PGN Parsed Successfully!");
+  }
 </script>
 {% endblock %}
