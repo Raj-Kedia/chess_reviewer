@@ -1,4 +1,5 @@
-{% extends "base.html" %} {% block title %}Home{% endblock %} {% block head %}
+{% extends "base.html" %} {% block title %} Home {% endblock %} {% block head %}
+{% load static%}
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Chess Reviewer</title>
@@ -10,217 +11,63 @@
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
 />
+<link rel="stylesheet" href="{% static 'css_files/reviewer.css' %}" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
-<audio id="moveSound" src="/static/media/move.mp3"></audio>
-<audio id="gameEnd" src="/static/media/game_end.mp3"></audio>
-<audio id="castleSound" src="/static/media/castle.mp3"></audio>
-<audio id="checkSound" src="/static/media/check.mp3"></audio>
-<audio id="captureSound" src="/static/media/capture.mp3"></audio>
-<audio id="promoteSound" src="/static/media/promote.mp3"></audio>
-<audio id="illegalSound" src="/static/media/illegal.mp3"></audio>
-<style>
-  .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 20px;
-  }
-  #board {
-    width: 400px;
-  }
-  .review-panel {
-    width: 40%;
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-  }
-  .move-list {
-    height: 300px;
-    overflow-y: auto;
-    border-bottom: 1px solid #ccc;
-    padding: 10px;
-    text-align: left;
-  }
-  .controls {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
-  }
-  .controls button {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  .highlight-square {
-    background-color: rgba(255, 255, 0, 0.5) !important;
-  }
-</style>
+
 {% endblock %} {% block body %}
 <h1 class="text-center">Chess Reviewer</h1>
 <div class="container">
   <div id="board"></div>
+
   <div class="review-panel">
-    <h3>Move History</h3>
-    <div class="move-list" id="moveHistory"></div>
-    <div class="controls">
-      <button id="flipBoard" title="Flip Board">
-        <i class="fa fa-retweet"></i>
+    <h3>PGN Status</h3>
+    <div id="pgnStatus" class="alert alert-success">
+      PGN parsed successfully!
+    </div>
+
+    <!-- Analyze Window (Initially Visible) -->
+    <div id="analyzeWindow" class="analyze-panel">
+      <label for="depthSlider"><strong>Stockfish Depth:</strong></label>
+      <input
+        type="range"
+        id="depthSlider"
+        min="10"
+        max="30"
+        value="15"
+        step="1"
+        class="form-range"
+      />
+      <span id="depthValue">15</span>
+      <button class="btn btn-outline-success mt-3" onclick="analyzeGame()">
+        Analyze
       </button>
-      <button id="startPosition" title="Go to Start Position">
-        <i class="fa fa-fast-backward"></i>
-      </button>
-      <button id="undoMove" title="Undo Move">
-        <i class="fa fa-backward"></i>
-      </button>
-      <button id="redoMove" title="Redo Move">
-        <i class="fa fa-forward"></i>
-      </button>
-      <button id="endPosition" title="Go to Last Move">
-        <i class="fa fa-fast-forward"></i>
-      </button>
+    </div>
+
+    <!-- Move History Window (Initially Hidden) -->
+    <div id="moveHistoryWindow" class="move-list hidden">
+      <h3>Move History</h3>
+      <div id="moveHistory"></div>
+      <div class="controls">
+        <button id="flipBoard" title="Flip Board">
+          <i class="fa fa-retweet"></i>
+        </button>
+        <button id="startPosition" title="Go to Start">
+          <i class="fa fa-fast-backward"></i>
+        </button>
+        <button id="undoMove" title="Undo">
+          <i class="fa fa-backward"></i>
+        </button>
+        <button id="redoMove" title="Redo">
+          <i class="fa fa-forward"></i>
+        </button>
+        <button id="endPosition" title="Go to Last">
+          <i class="fa fa-fast-forward"></i>
+        </button>
+      </div>
     </div>
   </div>
 </div>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const game = new Chess();
-    let moveHistoryStack = [];
-    let currentMoveIndex = 0;
-    let selectedSquare = null;
-    /*const moveSound = document.getElementById("moveSound");
-    const checkmateSound = document.getElementById("checkmateSound");
-    const stalemateSound = document.getElementById("stalemateSound");*/
-    const board = Chessboard("board", {
-      draggable: true,
-      position: "start",
-      pieceTheme:
-        "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
-      onDragStart: highlightMoves,
-      onDrop: handleMove,
-    });
-
-    function handleMove(source, target) {
-      //console.log(source, target);
-      const move = game.move({
-        from: source,
-        to: target,
-        promotion: "q",
-      });
-      if (move === null) {
-        playSound();
-        return "snapback";
-      }
-      selectedSquare = null;
-      moveHistoryStack = game.history({ verbose: true });
-      currentMoveIndex = moveHistoryStack.length;
-      board.position(game.fen());
-      updateHistory();
-      playSound(move);
-    }
-
-    function playSound(move) {
-      console.log(move);
-      if (!move) {
-        illegalSound.play();
-        return;
-      }
-
-      if (game.in_checkmate() || game.in_stalemate()) {
-        gameEnd.play();
-      } else if (move.san.includes("+")) {
-        checkSound.play();
-      } else if (move.san.includes("x")) {
-        captureSound.play();
-      } else if (move.san === "O-O" || move.san === "O-O-O") {
-        castleSound.play();
-      } else if (move.san.includes("=")) {
-        promoteSound.play();
-      } else {
-        moveSound.play();
-      }
-    }
-
-    function highlightMoves(source) {
-      clearHighlights();
-      selectedSquare = source;
-      const moves = game.moves({ square: source, verbose: true });
-      moves.forEach((move) => {
-        $(`.square-${move.to}`).addClass("highlight-square");
-      });
-    }
-
-    function clearHighlights() {
-      $(".square-55d63").removeClass("highlight-square");
-    }
-
-    $("#board").on("click", ".square", function () {
-      const clickedSquare = $(this).attr("data-square");
-
-      if (clickedSquare === selectedSquare) {
-        clearHighlights(); // If clicking the same square, just clear highlights
-        selectedSquare = null;
-      } else {
-        selectedSquare = clickedSquare;
-        clearHighlights();
-        highlightMoves(clickedSquare);
-      }
-    });
-
-    function updateHistory() {
-      let history = game.history({ verbose: true });
-      let formattedHistory = "";
-      for (let i = 0; i < history.length; i += 2) {
-        let whiteMove = history[i] ? history[i].san : "";
-        let blackMove = history[i + 1] ? history[i + 1].san : "";
-        formattedHistory += `${i / 2 + 1}. ${whiteMove} ${blackMove}<br>`;
-      }
-      document.getElementById("moveHistory").innerHTML = formattedHistory;
-    }
-
-    document.getElementById("flipBoard").addEventListener("click", function () {
-      board.flip();
-    });
-
-    document
-      .getElementById("startPosition")
-      .addEventListener("click", function () {
-        currentMoveIndex = 0;
-        game.reset();
-        board.position("start");
-      });
-
-    document.getElementById("undoMove").addEventListener("click", function () {
-      if (currentMoveIndex > 0) {
-        currentMoveIndex--;
-        game.reset();
-        for (let i = 0; i < currentMoveIndex; i++) {
-          game.move(moveHistoryStack[i]);
-        }
-        board.position(game.fen());
-        playSound(move);
-      }
-    });
-
-    document.getElementById("redoMove").addEventListener("click", function () {
-      if (currentMoveIndex < moveHistoryStack.length) {
-        game.move(moveHistoryStack[currentMoveIndex]);
-        currentMoveIndex++;
-        board.position(game.fen());
-        playSound(move);
-      }
-    });
-
-    document
-      .getElementById("endPosition")
-      .addEventListener("click", function () {
-        game.reset();
-        moveHistoryStack.forEach((move) => game.move(move));
-        currentMoveIndex = moveHistoryStack.length;
-        board.position(game.fen());
-      });
-  });
-</script>
+<script src="{% static 'js_files/reviewer.js' %}"></script>
 {% endblock %}
