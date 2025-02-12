@@ -3,7 +3,6 @@ let selectedPlatform = "PGN";
 let selectedPGN = "";
 let selectedGameIndex = -1;
 let gameData = [];
-
 function updatePlaceholder(option) {
     selectedPlatform = option;
     let placeholderText = {
@@ -19,11 +18,6 @@ function updatePlaceholder(option) {
     inputField.placeholder = placeholderText[option] || "Enter value";
     document.getElementById("dropdownMenuButton").textContent = option;
 
-    if (option === "Chess.com" || option === "Lichess.org") {
-        fetchButton.classList.remove("d-none");
-    } else {
-        fetchButton.classList.add("d-none");
-    }
 }
 
 async function fetchGame() {
@@ -139,46 +133,53 @@ function confirmGameSelection() {
     document.getElementById(
         "selectedGameText"
     ).innerHTML = `<strong>Selected Game:</strong> ${game.user} vs ${game.opponent
-        } <br> <small>${game.time.toLocaleString()}</small>`;
+    } <br> <small>${game.time.toLocaleString()}</small>`;
     document.getElementById("selectedGameContainer").style.display = "block";
 
     let gameModalElement = document.getElementById("gameModal");
     let gameModal = bootstrap.Modal.getInstance(gameModalElement);
     gameModal.hide();
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    updatePlaceholder("PGN");
-});
-function confirmGameSelection() {
-    let game = gameData[selectedGameIndex];
-    selectedPGN = game.pgn;
-
-    document.getElementById(
-        "selectedGameText"
-    ).innerHTML = `<strong>Selected Game:</strong> ${game.user} vs ${game.opponent
-        } <br> <small>${game.time.toLocaleString()}</small>`;
-    document.getElementById("selectedGameContainer").style.display = "block";
-
-    let gameModalElement = document.getElementById("gameModal");
-    let gameModal = bootstrap.Modal.getInstance(gameModalElement);
-    gameModal.hide();
-
-    // Show "Parse PGN" button, hide "Analyze" button
-    document.getElementById("parsePGNButton").classList.remove("d-none");
-    document.getElementById("analyzeButton").classList.add("d-none");
 }
 
 function parsePGN() {
-    if (!selectedPGN) {
-        alert("No PGN provided!");
-        return;
-    }
+    if (selectedPlatform === "Lichess.org" || selectedPlatform === "Chess.com") {
+        if (!selectedPGN) {
+            alert("No PGN provided!");
+            return;
+        }
+        localStorage.setItem("pgnData", selectedPGN);
+        window.location.href = "/reviewer/";
 
-    localStorage.setItem("pgnData", selectedPGN);
-    window.location.href = "/reviewer/";
+    } else if (selectedPlatform === "PGN") {
+        selectedPGN = document.getElementById("inputField").value.trim();
+        if (!selectedPGN) {
+            alert("No PGN provided");
+            return;
+        }
+        if (!checkPGNJSON(selectedPGN)) return;
+        localStorage.setItem("pgnData", selectedPGN);
+        window.location.href = "/reviewer/";
+
+    } else {
+        let json_data = document.getElementById("inputField").value.trim();
+        if (!json_data) {
+            alert("No JSON provided");
+            return;
+        }
+        if (!checkPGNJSON(json_data)) return;
+        localStorage.setItem("pgnData", json_data);
+        window.location.href = "/reviewer/";
+    }
 }
 
-function analyzeGame() {
-    alert("Stockfish analysis will be implemented here!");
+function checkPGNJSON(data) {
+    let isPGN = data.startsWith("[") || /\d+\.\s*[a-h][1-8]/.test(data);
+    let isJSON = data.startsWith("{") || data.startsWith("[");
+
+    if (selectedPlatform === "PGN") {
+        if (!isPGN) { alert("Invalid PGN"); return false; }
+    } else {
+        if (!isJSON) { alert("Invalid JSON"); return false; }
+    }
+    return true;
 }

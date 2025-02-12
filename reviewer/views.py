@@ -4,4 +4,3 @@ from django.http import HttpResponse
 
 def index(request):
     return render(request, 'reviewer/reviewer.html')
-    # Create your views here.

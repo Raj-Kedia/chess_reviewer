@@ -4,9 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
     let currentMoveIndex = 0;
     let selectedSquare = null;
-    /*const moveSound = document.getElementById("moveSound");
-    const checkmateSound = document.getElementById("checkmateSound");
-    const stalemateSound = document.getElementById("stalemateSound");*/
     const board = Chessboard("board", {
         draggable: true,
         position: "start",
@@ -30,7 +27,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     function handleMove(source, target) {
-        //console.log(source, target);
         const move = game.move({
             from: source,
             to: target,
@@ -87,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const clickedSquare = $(this).attr("data-square");
 
         if (clickedSquare === selectedSquare) {
-            clearHighlights(); // If clicking the same square, just clear highlights
+            clearHighlights();
             selectedSquare = null;
         } else {
             selectedSquare = clickedSquare;
@@ -148,37 +144,4 @@ document.addEventListener("DOMContentLoaded", function () {
             currentMoveIndex = moveHistoryStack.length;
             board.position(game.fen());
         });
-    async function analyzeGame() {
-        let pgn = localStorage.getItem("pgnData");
-        let depth = document.getElementById("depthSlider").value;
-
-        if (!pgn) {
-            alert("No PGN found!");
-            return;
-        }
-
-        let response = await fetch("/analyze_pgn/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pgn: pgn, depth: parseInt(depth) }),
-        });
-
-        let result = await response.json();
-        if (result.analysis) {
-            alert("Analysis complete! Move history updated.");
-
-            // Hide analyze panel and show move history panel
-            document.getElementById("analyzeWindow").classList.add("hidden");
-            document.getElementById("moveHistoryWindow").classList.remove("hidden");
-
-            // Populate move history with Stockfish evaluation
-            let history = "";
-            result.analysis.forEach((move, index) => {
-                history += `${index + 1}. ${move.move} (Eval: ${move.score})<br>`;
-            });
-            document.getElementById("moveHistory").innerHTML = history;
-        } else {
-            alert("Analysis failed: " + result.error);
-        }
-    }
 });
