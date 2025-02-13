@@ -42,3 +42,31 @@
 .hidden {
     display: none;
 }
+
+.eval-bar-container {
+    width: 30px;
+    height: 300px;
+    position: relative;
+    background-color: #eee;
+    border: 1px solid #333;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.eval-bar {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background-color: #000;
+    transition: height 0.3s ease-in-out;
+}
+
+.move-history {
+    display: flex;
+}
+
+.move-list {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
