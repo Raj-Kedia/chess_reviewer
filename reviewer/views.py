@@ -7,6 +7,7 @@ import json
 import io
 import chess.engine
 from django.shortcuts import render
+import re
 
 
 def index(request):
@@ -91,6 +92,25 @@ def import_moves_from_pgn(pgn_string: str):
     return moves
 
 
+def parse_pgn(pgn_string):
+    # Extract metadata (headers like [Event], [Site], etc.)
+    metadata = {}
+    metadata_matches = re.findall(r'\[(\w+)\s+"([^"]+)"\]', pgn_string)
+    for key, value in metadata_matches:
+        metadata[key] = value
+
+    # Extract move sequences (handles SAN notation)
+    move_list = re.findall(r'\d+\.\s*(\S+)\s+(\S+)?', pgn_string)
+    moves = []
+
+    for white_move, black_move in move_list:
+        moves.append(white_move)  # White's move
+        if black_move:  # If Black made a move in this turn
+            moves.append(black_move)
+
+    return metadata, moves
+
+
 @csrf_exempt
 def analyze_pgn(request):
     """Analyzes a sequence of moves from either a PGN string or a JSON list and classifies them."""
@@ -107,23 +127,28 @@ def analyze_pgn(request):
         data = json.loads(request.body)
         # Ensure you're sending {"pgn": "your PGN data"}
         pgn_string = data.get("pgn")
-
+        pgn_string.strip()
         if not pgn_string:
             return JsonResponse({"error": "PGN data missing"}, status=400)
 
         # Convert PGN string into move list
-        pgn = io.StringIO(pgn_string)
-        game = chess.pgn.read_game(pgn)
-
-        if not game:
-            return JsonResponse({"error": "Invalid PGN format"}, status=400)
-
-        moves = [move.uci() for move in game.mainline_moves()]
-
+        # pgn_file = io.StringIO(pgn_string)
+        # pgn_file.seek(0)
+        # print(pgn.read())
+        # pgn = open(pgn_file)
+        # print(pgn)
+        metadata, moves = parse_pgn(pgn_string)
+        # game = chess.pgn.read_game(pgn_file)
+        # # print(game)
+        # if not game:
+        #     return JsonResponse({"error": "Invalid PGN format"}, status=400)
+        # # print(game.mainline_moves())
+        # moves = [move for move in game.mainline_moves()]
+        print(moves)
         for move in moves:
             prev_fen = board.fen()
             try:
-                board.push_uci(move)  # Supports both PGN and UCI moves
+                board.push_san(move)  # Supports both PGN and UCI moves
             except ValueError:
                 engine.quit()
                 raise ValueError(f"Invalid move: {move}")
@@ -144,6 +169,7 @@ def analyze_pgn(request):
             prev_eval = eval_score
 
         engine.quit()
+        print(analysis_results)
         return JsonResponse({"analysis_results": analysis_results})
 
     except json.JSONDecodeError:

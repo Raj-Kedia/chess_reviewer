@@ -115,22 +115,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     window.analyzeGame = async function () {
-        fetch("/reviewer/analyze_pgn/", {
+        fetch("./analyze_pgn/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ pgn: pgnData }),
         })
             .then(response => response.json())
             .then(data => {
-                if (!data || !data.moves) {
-                    console.error("Error: Invalid response from server", data);
+                console.log("Server Response:", data); // Debugging line
+                console.log(data.analysis_results)
+                if (!data || !data.analysis_results) {
+                    console.error("Error: Invalid response from server", data.analysis_results);
                     return;
                 }
-                displayAnalysis(data);
+                displayAnalysis(data.analysis_results); // Update function call
             })
             .catch(error => console.error("Error analyzing game:", error));
-
     }
+
 
     function displayAnalysis(analysisData) {
         const outputDiv = document.getElementById('analysis-output');
