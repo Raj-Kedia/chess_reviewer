@@ -3,6 +3,7 @@ let selectedPlatform = "PGN";
 let selectedPGN = "";
 let selectedGameIndex = -1;
 let gameData = [];
+
 function updatePlaceholder(option) {
     selectedPlatform = option;
     let placeholderText = {
@@ -15,9 +16,19 @@ function updatePlaceholder(option) {
     let inputField = document.getElementById("inputField");
     let fetchButton = document.getElementById("fetchButton");
 
+    if (!fetchButton) {
+        console.error("Fetch button not found in the DOM!");
+        return;
+    }
     inputField.placeholder = placeholderText[option] || "Enter value";
-    document.getElementById("dropdownMenuButton").textContent = option;
 
+    if (selectedPlatform === "Chess.com" || selectedPlatform === "Lichess.org") {
+        fetchButton.classList.remove("d-none");
+        console.log("Fetch button is now visible.");
+    } else {
+        fetchButton.classList.add("d-none");
+        console.log("Fetch button is now hidden.");
+    }
 }
 
 async function fetchGame() {

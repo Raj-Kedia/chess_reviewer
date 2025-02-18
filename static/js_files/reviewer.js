@@ -1,3 +1,123 @@
+
+let pgnData = localStorage.getItem("pgnData");
+
+function analyzeGame() {
+    if (!pgnData) {
+        console.error("No PGN data found!");
+        return;
+    }
+
+    fetch("./analyze_pgn/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pgn: pgnData }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Server Response:", data);
+            if (!data || !data.analysis || !data.result) {
+                console.error("Error: Invalid response from server");
+                return;
+            }
+
+            displayGameSummary(data.result);
+            displayAnalysis(data.analysis);
+        })
+        .catch(error => console.error("Error analyzing game:", error));
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof analyzeGame === "function") {
+        analyzeGame();
+    }
+});
+
+function displayGameSummary(results) {
+    if (!results) {
+        console.error("Error: Missing results data");
+        return;
+    }
+
+    const classification_index = {
+        "Brilliant": 1,
+        "Great": 2,
+        "Best": 3,
+        "Excellent": 4,
+        "Good": 5,
+        "Book": 6,
+        "Inaccuracy": 7,
+        "Mistake": 8,
+        "Blunder": 9
+    };
+
+    const summaryDiv = document.getElementById("gameSummary");
+    if (!summaryDiv) {
+        console.error("Error: gameSummary element not found");
+        return;
+    }
+
+    let summaryHtml = `<p><strong>Black:</strong> ${results.Black} (Accuracy: ${results.black_accuracy}%)</p>`;
+    for (const [classification, index] of Object.entries(classification_index)) {
+        summaryHtml += `<p>${classification}: ${results.black_arr[index] || 0}</p>`;
+    }
+
+    summaryHtml += `<p><strong>White:</strong> ${results.White} (Accuracy: ${results.white_accuracy}%)</p>`;
+    for (const [classification, index] of Object.entries(classification_index)) {
+        summaryHtml += `<p>${classification}: ${results.white_arr[index] || 0}</p>`;
+    }
+
+    summaryDiv.innerHTML = summaryHtml;
+}
+
+function displayAnalysis(analysisData) {
+    const outputDiv = document.getElementById('analysis-output');
+    if (!outputDiv) {
+        console.error("Error: analysis-output element not found");
+        return;
+    }
+
+    outputDiv.innerHTML = '';
+    if (!analysisData || analysisData.length === 0) {
+        outputDiv.innerHTML = '<p>No analysis available.</p>';
+        return;
+    }
+
+    const resultTable = document.createElement('table');
+    resultTable.innerHTML = `
+        <tr>
+            <th>Move</th>
+            <th>Evaluation</th>
+            <th>Suggestion</th>
+        </tr>
+    `;
+    let index = 0;
+    analysisData.forEach((move, classification, best_move) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}. ${move.move}</td>
+            <td>${move.classification}</td>
+            <td>${move.best_move}</td>
+        `;
+        resultTable.appendChild(row);
+        index += 1;
+    });
+
+    outputDiv.appendChild(resultTable);
+}
+
+const toggleReviewButton = document.getElementById("toggleReview");
+const analyzeWindow = document.getElementById("analyzeWindow");
+const moveHistoryWindow = document.getElementById("moveHistoryWindow");
+
+if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
+    toggleReviewButton.addEventListener("click", function () {
+        analyzeWindow.style.display = "none";
+        moveHistoryWindow.style.display = "block";
+    });
+}
+
+
+
 document.addEventListener("DOMContentLoaded", function () {
     const game = new Chess();
     let moveHistoryStack = [];
@@ -12,7 +132,6 @@ document.addEventListener("DOMContentLoaded", function () {
         onDrop: handleMove,
     });
 
-    let pgnData = localStorage.getItem("pgnData");
     if (!pgnData) {
         document.getElementById("pgnStatus").classList.replace("alert-success", "alert-danger");
         document.getElementById("pgnStatus").innerText = "No PGN found!";
@@ -105,64 +224,4 @@ document.addEventListener("DOMContentLoaded", function () {
         currentMoveIndex = moveHistoryStack.length;
         board.position(game.fen());
     });
-
-    let analyzeWindow = document.getElementById("analyzeWindow");
-    let moveHistoryWindow = document.getElementById("moveHistoryWindow");
-
-    moveHistoryWindow.style.display = "none";
-    let moveHistoryDiv = document.getElementById("moveHistory");
-    let moveDetailsDiv = document.getElementById("moveDetails");
-
-
-    window.analyzeGame = async function () {
-        fetch("./analyze_pgn/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pgn: pgnData }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Server Response:", data); // Debugging line
-                console.log(data.analysis_results)
-                if (!data || !data.analysis_results) {
-                    console.error("Error: Invalid response from server", data.analysis_results);
-                    return;
-                }
-                displayAnalysis(data.analysis_results); // Update function call
-            })
-            .catch(error => console.error("Error analyzing game:", error));
-    }
-
-
-    function displayAnalysis(analysisData) {
-        const outputDiv = document.getElementById('analysis-output');
-        outputDiv.innerHTML = '';
-
-        if (!analysisData.moves || analysisData.moves.length === 0) {
-            outputDiv.innerHTML = '<p>No analysis available.</p>';
-            return;
-        }
-
-        const resultTable = document.createElement('table');
-        resultTable.innerHTML = `
-            <tr>
-                <th>Move</th>
-                <th>Evaluation</th>
-                <th>Suggestion</th>
-            </tr>
-        `;
-
-        analysisData.moves.forEach((move, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}. ${move.move}</td>
-                <td>${move.evaluation}</td>
-                <td>${move.suggestion || 'Good move'}</td>
-            `;
-            resultTable.appendChild(row);
-        });
-
-        outputDiv.appendChild(resultTable);
-    }
-
 });

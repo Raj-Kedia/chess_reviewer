@@ -40,25 +40,34 @@ classifications = {
     "mistake": "Mistake",
     "blunder": "Blunder",
     "forced": "Forced",
-    "mate": "Mate",
+    "excellent": "Excellent",
+    "book": "Book",
+    "miss": "Miss"
 }
 
 
 def evaluate_position(engine: chess.engine.SimpleEngine, board: chess.Board) -> float:
     """Evaluates the board position using the engine."""
-    info = engine.analyse(board, chess.engine.Limit(depth=20))
+    info = engine.analyse(board, chess.engine.Limit(depth=30))
     score = info["score"].relative
     return score.score(mate_score=100000) if score.is_mate() else score.score()
 
 
-def classify_move(eval_loss: float) -> str:
-    """Classifies move based on centipawn loss."""
-    if eval_loss >= 300:
-        return classifications["blunder"]
+def classify_move(eval_loss: float, best_move: chess.Move, played_move: chess.Move) -> str:
+    if played_move == best_move:
+        return classifications["best"]
+    elif eval_loss <= -200:
+        return classifications["brilliant"]
+    elif eval_loss <= -100:
+        return classifications["great"]
+    elif eval_loss <= -50:
+        return classifications["excellent"]
     elif eval_loss >= 100:
         return classifications["mistake"]
     elif eval_loss >= 50:
         return classifications["inaccuracy"]
+    elif eval_loss >= 300:
+        return classifications["blunder"]
     return classifications["good"]
 
 
@@ -70,43 +79,25 @@ def get_opening_name(fen: str) -> Optional[str]:
     return None
 
 
-def import_moves_from_pgn(pgn_string: str):
-    """
-    Reads a PGN string and extracts the list of UCI moves.
-
-    Args:
-        pgn_string (str): The PGN string representing the game.
-
-    Returns:
-        list: A list of UCI moves from the game.
-    """
-    pgn = io.StringIO(pgn_string)
-    game = chess.pgn.read_game(pgn)
-
-    if not game:
-        raise ValueError("Invalid PGN format.")
-
-    board = game.board()
-    moves = [move.uci() for move in game.mainline_moves()]
-
-    return moves
-
-
 def parse_pgn(pgn_string):
-    # Extract metadata (headers like [Event], [Site], etc.)
+    # Extract metadata
     metadata = {}
     metadata_matches = re.findall(r'\[(\w+)\s+"([^"]+)"\]', pgn_string)
     for key, value in metadata_matches:
         metadata[key] = value
 
-    # Extract move sequences (handles SAN notation)
-    move_list = re.findall(r'\d+\.\s*(\S+)\s+(\S+)?', pgn_string)
-    moves = []
+    # Remove comments and clock information
+    # Remove curly brace annotations
+    pgn_moves = re.sub(r"{.*?}", "", pgn_string)
+    pgn_moves = re.sub(r"\d+\.", "", pgn_moves)  # Remove move numbers
+    pgn_moves = re.sub(r"\[.*?\]", "", pgn_moves)  # Remove metadata
 
-    for white_move, black_move in move_list:
-        moves.append(white_move)  # White's move
-        if black_move:  # If Black made a move in this turn
-            moves.append(black_move)
+    # Extract moves
+    moves = pgn_moves.strip().split()
+
+    # Remove the result (e.g., "1-0", "0-1", "1/2-1/2")
+    moves = [move for move in moves if not re.match(
+        r"^1-0$|^0-1$|^1/2-1/2$", move) and move != '..']
 
     return metadata, moves
 
@@ -119,58 +110,83 @@ def analyze_pgn(request):
 
     engine = chess.engine.SimpleEngine.popen_uci(engine_path)
     board = chess.Board()
-    analysis_results = []
+    analysis = []
+    results = {}
+    classfication_index = {
+        "Brilliant": 1,
+        "Great": 2,
+        "Best": 3,
+        "Excellent": 4,
+        "Good": 5,
+        "Book": 6,
+        "Inaccuracy": 7,
+        "Mistake": 8,
+        "Blunder": 9
+    }
     prev_eval = 0
-    # Determine if input is PGN or a list of moves
+    Black_arr = [0]*10
+    White_arr = [0]*10
+
     try:
-        # Extract PGN data from the request body
+        print(request)
+        print()
         data = json.loads(request.body)
-        # Ensure you're sending {"pgn": "your PGN data"}
-        pgn_string = data.get("pgn")
-        pgn_string.strip()
+        print(data)
+        print()
+        pgn_string = data.get("pgn").strip()
+        print(pgn_string)
+        print()
         if not pgn_string:
             return JsonResponse({"error": "PGN data missing"}, status=400)
 
-        # Convert PGN string into move list
-        # pgn_file = io.StringIO(pgn_string)
-        # pgn_file.seek(0)
-        # print(pgn.read())
-        # pgn = open(pgn_file)
-        # print(pgn)
         metadata, moves = parse_pgn(pgn_string)
-        # game = chess.pgn.read_game(pgn_file)
-        # # print(game)
-        # if not game:
-        #     return JsonResponse({"error": "Invalid PGN format"}, status=400)
-        # # print(game.mainline_moves())
-        # moves = [move for move in game.mainline_moves()]
+        for key, value in metadata.items():
+            if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
+                results[key] = value
         print(moves)
         for move in moves:
-            prev_fen = board.fen()
             try:
-                board.push_san(move)  # Supports both PGN and UCI moves
+                best_move = engine.play(
+                    board, chess.engine.Limit(depth=20)).move
+                best = str(best_move)
+                board.push_san(move)
             except ValueError:
                 engine.quit()
                 raise ValueError(f"Invalid move: {move}")
-
             eval_score = evaluate_position(engine, board)
             eval_loss = prev_eval - eval_score
 
-            classification = classify_move(eval_loss)
-            opening_name = get_opening_name(prev_fen)
+            curr_fen = board.fen()
+            move_color = curr_fen.split()[1]
+            classification = classify_move(eval_loss, best_move, board.peek())
 
-            analysis_results.append({
+            if move_color == 'w':
+                White_arr[classfication_index[classification]] += 1
+            else:
+                Black_arr[classfication_index[classification]] += 1
+
+            analysis.append({
                 "move": move,
                 "classification": classification,
                 "eval_loss": eval_loss,
-                "opening": opening_name if opening_name else "Unknown"
+                'best_move': best
             })
-
             prev_eval = eval_score
 
+        total_moves = len(moves)
+        white_accuracy = (White_arr[1] + White_arr[2] +
+                          White_arr[3] + White_arr[4]) / total_moves * 100
+        black_accuracy = (Black_arr[1] + Black_arr[2] +
+                          Black_arr[3] + Black_arr[4]) / total_moves * 100
+        results["white_accuracy"] = round(white_accuracy, 2)
+        results["black_accuracy"] = round(black_accuracy, 2)
+        results["black_arr"] = Black_arr
+        results["white_arr"] = White_arr
+
         engine.quit()
-        print(analysis_results)
-        return JsonResponse({"analysis_results": analysis_results})
+        print(results)
+        print(analysis)
+        return JsonResponse({"result": results, "analysis": analysis})
 
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format"}, status=400)

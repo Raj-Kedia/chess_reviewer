@@ -45,6 +45,16 @@
       </button>
     </div>
 
+    <!-- Analysis Window (Initially Visible) -->
+    <div id="analyzeWindow" class="analyze-panel">
+      <h2>Game Analysis Summary</h2>
+      <div id="gameSummary" class="summary-panel"></div>
+
+      <button class="btn btn-primary mt-3" id="toggleReview">
+        Review Moves
+      </button>
+    </div>
+
     <!-- Move History Window (Initially Hidden) -->
     <div id="moveHistoryWindow" class="move-list hidden">
       <h3>Move History</h3>
@@ -72,5 +82,5 @@
     </div>
   </div>
 </div>
-<script src="{% static 'js_files/reviewer.js' %}"></script>
+<script src="{% static 'js_files/reviewer.js' %}" defer></script>
 {% endblock %}
