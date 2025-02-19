@@ -148,7 +148,7 @@ def analyze_pgn(request):
             try:
                 best_move = engine.play(
                     board, chess.engine.Limit(depth=20)).move
-                best = str(best_move)
+                best = board.san(best_move)
                 board.push_san(move)
             except ValueError:
                 engine.quit()

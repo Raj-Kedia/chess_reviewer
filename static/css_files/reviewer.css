@@ -70,3 +70,27 @@
     padding: 10px;
     border: 1px solid #ccc;
 }
+
+.accuracy-box {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+.accuracy-box.white {
+    background-color: white;
+    color: black;
+    /* Text color for contrast */
+    border: 2px solid black;
+}
+
+.accuracy-box.black {
+    background-color: black;
+    color: white;
+    /* Text color for contrast */
+    border: 2px solid white;
+}

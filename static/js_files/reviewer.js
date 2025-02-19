@@ -1,5 +1,17 @@
-
 let pgnData = localStorage.getItem("pgnData");
+const analyzeButton = document.getElementById("analyzebutton");
+const toggleReviewButton = document.getElementById("toggleReview");
+const analyzeWindow = document.getElementById("analyzeWindow")
+const resultWindow = document.getElementById("resultWindow");
+const moveHistoryWindow = document.getElementById("moveHistoryWindow");
+
+analyzeButton.addEventListener("click", function () {
+    if (typeof analyzeGame === "function") {
+        analyzeGame();
+        analyzeWindow.style.display = 'none';
+        resultWindow.classList.remove('d-none');
+    }
+});
 
 function analyzeGame() {
     if (!pgnData) {
@@ -22,52 +34,73 @@ function analyzeGame() {
 
             displayGameSummary(data.result);
             displayAnalysis(data.analysis);
+            updateBoardToLastMove(); // Ensure board is at the last move
         })
         .catch(error => console.error("Error analyzing game:", error));
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    if (typeof analyzeGame === "function") {
-        analyzeGame();
-    }
-});
-
 function displayGameSummary(results) {
-    if (!results) {
-        console.error("Error: Missing results data");
-        return;
-    }
-
-    const classification_index = {
-        "Brilliant": 1,
-        "Great": 2,
-        "Best": 3,
-        "Excellent": 4,
-        "Good": 5,
-        "Book": 6,
-        "Inaccuracy": 7,
-        "Mistake": 8,
-        "Blunder": 9
-    };
+    const classification_types = [
+        "Brilliant", "Great", "Best", "Excellent", "Good", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
+    ];
 
     const summaryDiv = document.getElementById("gameSummary");
-    if (!summaryDiv) {
-        console.error("Error: gameSummary element not found");
-        return;
-    }
 
-    let summaryHtml = `<p><strong>Black:</strong> ${results.Black} (Accuracy: ${results.black_accuracy}%)</p>`;
-    for (const [classification, index] of Object.entries(classification_index)) {
-        summaryHtml += `<p>${classification}: ${results.black_arr[index] || 0}</p>`;
-    }
+    summaryDiv.innerHTML = `
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Players</th>
+                <th scope="col">${results.White}</th>
+                <th scope="col"></th>
+                <th scope="col">${results.Black}</th>
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            <!-- Accuracy Row -->
+            <tr>
+                <th scope="row">Accuracy</th>
+                <td><div class="accuracy-box white">${results.white_accuracy}%</div></td>
+                <td></td>
+                <td><div class="accuracy-box black">${results.black_accuracy}%</div></td>
+            </tr>
 
-    summaryHtml += `<p><strong>White:</strong> ${results.White} (Accuracy: ${results.white_accuracy}%)</p>`;
-    for (const [classification, index] of Object.entries(classification_index)) {
-        summaryHtml += `<p>${classification}: ${results.white_arr[index] || 0}</p>`;
-    }
+            <!-- Move Classifications -->
+            ${classification_types.map((classification, index) => `
+                <tr>
+                    <th scope="row">${classification}</th>
+                    <td>${results.white_arr[index + 1] || 0}</td>
+                    <td>${getIcon(classification)}</td>
+                    <td>${results.black_arr[index + 1] || 0}</td>
+                </tr>
+            `).join("")}
+        </tbody>
+    </table>`;
 
-    summaryDiv.innerHTML = summaryHtml;
 }
+
+function getIcon(classification) {
+    const icons = {
+        "Brilliant": "brilliant.png",
+        "Great": "great.png",
+        "Best": "best.png",
+        "Excellent": "excellent.png",
+        "Good": "good.png",
+        "Book": "book.png",
+        "Inaccuracy": "inaccuracy.png",
+        "Mistake": "mistake.png",
+        "Miss": "miss.png",
+        "Blunder": "blunder.png"
+    };
+
+    const fileName = icons[classification];
+    if (!fileName) return "";
+
+    return `<img src="/static/media/${fileName}" alt="${classification}" class="move-icon">`;
+}
+
+// Store FEN states for move history navigation
+let positions = [];
 
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('analysis-output');
@@ -86,28 +119,63 @@ function displayAnalysis(analysisData) {
     resultTable.innerHTML = `
         <tr>
             <th>Move</th>
-            <th>Evaluation</th>
+            <th>Classification</th>
             <th>Suggestion</th>
         </tr>
     `;
-    let index = 0;
-    analysisData.forEach((move, classification, best_move) => {
+
+    analysisData.forEach((move, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${index + 1}. ${move.move}</td>
+            <td>${index % 2 === 0 ? (Math.floor(index / 2) + 1) + ". " : ""}${move.move}</td>
             <td>${move.classification}</td>
             <td>${move.best_move}</td>
         `;
+
+        // Store FEN position at each move for navigation
+        positions.push(move.fen);
         resultTable.appendChild(row);
-        index += 1;
     });
 
     outputDiv.appendChild(resultTable);
 }
 
-const toggleReviewButton = document.getElementById("toggleReview");
-const analyzeWindow = document.getElementById("analyzeWindow");
-const moveHistoryWindow = document.getElementById("moveHistoryWindow");
+// Ensure board starts at the last move
+function updateBoardToLastMove() {
+    if (positions.length > 0) {
+        board.position(positions[positions.length - 1]);
+    }
+}
+
+// Allow clicking on a move to update the board position
+function setupMoveHistoryNavigation() {
+    const moveEntries = document.querySelectorAll("#analysis-output tr");
+
+    moveEntries.forEach((entry, index) => {
+        entry.addEventListener("click", function () {
+            if (positions[index]) {
+                board.position(positions[index]);
+            }
+        });
+    });
+}
+
+// Show classification icon on the last moved piece
+function showClassificationIcon(square, classification) {
+    let pieceElement = document.querySelector(`.square-${square}`);
+    if (!pieceElement) return;
+
+    let icon = document.createElement("img");
+    icon.src = `/static/media/${classification}.png`;
+    icon.classList.add("classification-icon");
+
+    pieceElement.appendChild(icon);
+}
+
+// Display suggested move arrow
+function showSuggestedMove(from, to) {
+    board.addArrow({ from: from, to: to, color: 'blue' });
+}
 
 if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     toggleReviewButton.addEventListener("click", function () {
@@ -124,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentMoveIndex = 0;
     let selectedSquare = null;
 
-    const board = Chessboard("board", {
+    window.board = Chessboard("board", {
         draggable: true,
         position: "start",
         pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
