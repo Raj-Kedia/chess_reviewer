@@ -3,7 +3,6 @@ let selectedPlatform = "PGN";
 let selectedPGN = "";
 let selectedGameIndex = -1;
 let gameData = [];
-
 function updatePlaceholder(option) {
     selectedPlatform = option;
     let placeholderText = {
@@ -29,6 +28,7 @@ function updatePlaceholder(option) {
         fetchButton.classList.add("d-none");
         console.log("Fetch button is now hidden.");
     }
+    document.getElementById("dropdownMenuButton").innerHTML = `${selectedPlatform}`
 }
 
 async function fetchGame() {

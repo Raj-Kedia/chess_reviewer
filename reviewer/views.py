@@ -20,6 +20,8 @@ engine_path = "D:\study\projects\chess_reviewer\chess_reviewer\stockfish\stockfi
 with open("static\\resources\\openings.json", "r") as f:
     openings = json.load(f)
 
+engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+board = chess.Board()
 # Piece values for evaluation
 piece_values = {
     chess.PAWN: 100,
@@ -49,30 +51,72 @@ classifications = {
 def evaluate_position(engine: chess.engine.SimpleEngine, board: chess.Board) -> float:
     """Evaluates the board position using the engine."""
     info = engine.analyse(board, chess.engine.Limit(depth=30))
+
+    print("Debug: Engine analysis info ->", info)  # 🔍 Print the full response
+
+    if "score" not in info:  # Handle missing score
+        print("⚠️ Warning: 'score' missing in engine output!")
+        return 0  # Default to 0 evaluation
+
     score = info["score"].relative
+    if score is None:
+        print("⚠️ Warning: 'relative' score is None!")
+        return 0  # Default score if evaluation fails
+
     return score.score(mate_score=100000) if score.is_mate() else score.score()
 
 
-def classify_move(eval_loss: float, best_move: chess.Move, played_move: chess.Move) -> str:
-    if played_move == best_move:
-        return classifications["best"]
-    elif eval_loss <= -200:
+def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move_class):
+    print("start")
+    if len(list(board.legal_moves)) == 1 and best_move == played_move:
+        return classifications["forced"]
+    print("going to evaluate best move")
+    if isinstance(best_move, str):  # Ensure it's a Move object
+        best_move = chess.Move.from_uci(best_move)
+
+    if best_move in board.legal_moves:  # Safety check
+        board.push(best_move)  # Play best move
+        best_move_eval = evaluate_position(
+            engine, board)  # Evaluate new position
+        board.pop()  # Undo the move
+    else:
+        # If best move is illegal (shouldn't happen)
+        best_move_eval = float("-inf")
+    prev_eval = (eval_loss+played_move_eval)
+    gain_best = best_move_eval - prev_eval
+    gain_played = played_move_eval - prev_eval
+    print("Started classificaiton")
+    if gain_played < gain_best:
         return classifications["brilliant"]
-    elif eval_loss <= -100:
-        return classifications["great"]
-    elif eval_loss <= -50:
-        return classifications["excellent"]
-    elif eval_loss >= 100:
-        return classifications["mistake"]
-    elif eval_loss >= 50:
+
+    if played_move == best_move:
+        if gain_best >= 150:
+            return classifications["great"]
+        return classifications["best"]
+    if eval_loss <= -50:
+        return classifications['excellent']
+    if -50 <= eval_loss <= 0:
+        return classifications['good']
+    print('Till now no error!!')
+    if board.is_capture(best_move) and not board.is_capture(played_move) and eval_loss > 0:
+        return classifications["miss"]
+    if eval_loss >= 50:
         return classifications["inaccuracy"]
-    elif eval_loss >= 300:
+
+    if eval_loss >= 100:
+        return classifications["mistake"]
+
+    if prev_move_class and prev_move_class in {"Best", "Great", "Brilliant", "Excellent", "Book", "Forced"} and eval_loss >= 300:
+        if prev_eval <= -600:
+            return classifications["mistake"]
+        if played_move_eval >= 600:
+            return classifications["mistake"]
         return classifications["blunder"]
     return classifications["good"]
+    print("classification done ; )")
 
 
 def get_opening_name(fen: str) -> Optional[str]:
-    """Finds the opening name from the openings database."""
     for opening in openings:
         if opening["fen"] == fen:
             return opening["name"]
@@ -108,34 +152,29 @@ def analyze_pgn(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=400)
 
-    engine = chess.engine.SimpleEngine.popen_uci(engine_path)
-    board = chess.Board()
     analysis = []
     results = {}
     classfication_index = {
-        "Brilliant": 1,
-        "Great": 2,
-        "Best": 3,
-        "Excellent": 4,
-        "Good": 5,
-        "Book": 6,
+        "Brilliant": 0,
+        "Great": 1,
+        "Best": 2,
+        "Excellent": 3,
+        "Good": 4,
+        "Book": 5,
+        "Miss": 6,
         "Inaccuracy": 7,
         "Mistake": 8,
-        "Blunder": 9
+        "Blunder": 9,
+        "Forced": 10
     }
     prev_eval = 0
-    Black_arr = [0]*10
-    White_arr = [0]*10
-
+    Black_arr = [0]*11
+    White_arr = [0]*11
+    opening_name = None
+    prev_move_class = None
     try:
-        print(request)
-        print()
         data = json.loads(request.body)
-        print(data)
-        print()
         pgn_string = data.get("pgn").strip()
-        print(pgn_string)
-        print()
         if not pgn_string:
             return JsonResponse({"error": "PGN data missing"}, status=400)
 
@@ -144,40 +183,60 @@ def analyze_pgn(request):
             if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
                 results[key] = value
         print(moves)
+        board.reset()
         for move in moves:
             try:
                 best_move = engine.play(
                     board, chess.engine.Limit(depth=20)).move
                 best = board.san(best_move)
+                print(type(best), type(best_move))
+
                 board.push_san(move)
             except ValueError:
                 engine.quit()
                 raise ValueError(f"Invalid move: {move}")
+
+            print("best move calcualated")
             eval_score = evaluate_position(engine, board)
             eval_loss = prev_eval - eval_score
-
+            print('postion evaluated')
             curr_fen = board.fen()
             move_color = curr_fen.split()[1]
-            classification = classify_move(eval_loss, best_move, board.peek())
-
+            curr_opening = get_opening_name(curr_fen.split()[0])
+            print("opening name done")
+            print(opening_name, curr_opening)
+            if curr_opening:
+                opening_name = curr_opening
+                classification = classifications['book']
+            else:
+                opening_name = 'unknown' if not opening_name else opening_name
+                classification = classify_move(
+                    eval_loss, best_move, board.peek(), eval_score, prev_move_class)
+            prev_move_class = classification
+            print("classification is also done")
+            print(move_color)
+            print(classification)
+            print(classfication_index[classification])
+            print(White_arr[classfication_index[classification]])
+            print(Black_arr[classfication_index[classification]])
             if move_color == 'w':
                 White_arr[classfication_index[classification]] += 1
             else:
                 Black_arr[classfication_index[classification]] += 1
-
             analysis.append({
                 "move": move,
                 "classification": classification,
                 "eval_loss": eval_loss,
-                'best_move': best
+                'best_move': best,
+                "opening": opening_name
             })
             prev_eval = eval_score
-
+        print("completed analysis per move")
         total_moves = len(moves)
-        white_accuracy = (White_arr[1] + White_arr[2] +
-                          White_arr[3] + White_arr[4]) / total_moves * 100
-        black_accuracy = (Black_arr[1] + Black_arr[2] +
-                          Black_arr[3] + Black_arr[4]) / total_moves * 100
+        white_accuracy = (White_arr[0] + White_arr[1] +
+                          White_arr[2] + White_arr[3]) / total_moves * 100
+        black_accuracy = (Black_arr[0] + Black_arr[1] +
+                          Black_arr[2] + Black_arr[3]) / total_moves * 100
         results["white_accuracy"] = round(white_accuracy, 2)
         results["black_accuracy"] = round(black_accuracy, 2)
         results["black_arr"] = Black_arr

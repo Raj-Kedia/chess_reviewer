@@ -5,18 +5,56 @@ const analyzeWindow = document.getElementById("analyzeWindow")
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
 
+// const progressBarContainer = document.createElement("div");
+// progressBarContainer.id = "progressBarContainer";
+// progressBarContainer.style.width = "100%";
+// progressBarContainer.style.height = "5px";
+// progressBarContainer.style.backgroundColor = "#ddd";
+// progressBarContainer.style.display = "none"; // Initially hidden
+
+// const progressBar = document.createElement("div");
+// progressBar.id = "progressBar";
+// progressBar.style.width = "5%";
+// progressBar.style.height = "100%";
+// progressBar.style.backgroundColor = "#4caf50"; // Green color
+
+// progressBarContainer.appendChild(progressBar);
+// resultWindow.prepend(progressBarContainer); // Add progress bar at the top
+
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
-        analyzeGame();
         analyzeWindow.style.display = 'none';
-        resultWindow.classList.remove('d-none');
+        resultWindow.classList.remove("d-none");
+        // showProgressBar(); // Show progress bar
+        analyzeGame();
     }
 });
+
+// function showProgressBar() {
+//     progressBarContainer.style.display = "block";
+//     progressBar.style.width = "0%"; // Reset progress
+//     let progress = 0;
+
+//     const interval = setInterval(() => {
+//         progress += 5;
+//         progressBar.style.width = `${progress}%`;
+//         if (progress >= 90) {
+//             clearInterval(interval);
+//         }
+//     }, 500);
+
+//     analyzeGame().then(() => {
+//         clearInterval(interval);
+//         progressBar.style.width = "100%"; // Complete the progress
+//         setTimeout(() => {
+//             progressBarContainer.style.display = "none"; // Hide after completion
+//         }, 500);
+//     });
+// }
 
 function analyzeGame() {
     if (!pgnData) {
         console.error("No PGN data found!");
-        return;
     }
 
     fetch("./analyze_pgn/", {
@@ -29,16 +67,20 @@ function analyzeGame() {
             console.log("Server Response:", data);
             if (!data || !data.analysis || !data.result) {
                 console.error("Error: Invalid response from server");
-                return;
+                // return reject();
             }
 
             displayGameSummary(data.result);
             displayAnalysis(data.analysis);
             updateBoardToLastMove(); // Ensure board is at the last move
-        })
-        .catch(error => console.error("Error analyzing game:", error));
-}
 
+            // resolve(); // Mark analysis as complete
+        })
+        .catch(error => {
+            console.error("Error analyzing game:", error);
+            // reject();
+        });
+}
 function displayGameSummary(results) {
     const classification_types = [
         "Brilliant", "Great", "Best", "Excellent", "Good", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
