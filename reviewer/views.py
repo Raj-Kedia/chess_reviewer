@@ -8,6 +8,14 @@ import io
 import chess.engine
 from django.shortcuts import render
 import re
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.pagination import CursorPagination
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from .models import *
+from .serializer import *
 
 
 def index(request):
@@ -113,7 +121,6 @@ def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move
             return classifications["mistake"]
         return classifications["blunder"]
     return classifications["good"]
-    print("classification done ; )")
 
 
 def get_opening_name(fen: str) -> Optional[str]:
@@ -146,12 +153,7 @@ def parse_pgn(pgn_string):
     return metadata, moves
 
 
-@csrf_exempt
-def analyze_pgn(request):
-    """Analyzes a sequence of moves from either a PGN string or a JSON list and classifies them."""
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid request method"}, status=400)
-
+def analyze_pgn(moves, metadata):
     analysis = []
     results = {}
     classfication_index = {
@@ -173,12 +175,6 @@ def analyze_pgn(request):
     opening_name = None
     prev_move_class = None
     try:
-        data = json.loads(request.body)
-        pgn_string = data.get("pgn").strip()
-        if not pgn_string:
-            return JsonResponse({"error": "PGN data missing"}, status=400)
-
-        metadata, moves = parse_pgn(pgn_string)
         for key, value in metadata.items():
             if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
                 results[key] = value
@@ -224,11 +220,11 @@ def analyze_pgn(request):
             else:
                 Black_arr[classfication_index[classification]] += 1
             analysis.append({
-                "move": move,
-                "classification": classification,
-                "eval_loss": eval_loss,
-                'best_move': best,
-                "opening": opening_name
+                "m": move,
+                "class": classification,
+                "loss": eval_loss,
+                'bm': best,
+                "op": opening_name
             })
             prev_eval = eval_score
         print("completed analysis per move")
@@ -245,9 +241,60 @@ def analyze_pgn(request):
         engine.quit()
         print(results)
         print(analysis)
-        return JsonResponse({"result": results, "analysis": analysis})
-
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        return analysis, results
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        raise ValueError(f"Something went wrong: {e}")
+
+
+class MoveCursorPagination(CursorPagination):
+    ordering = 'm'  # Ordering by move identifier
+    page_size = 10  # Number of moves per page
+    page_size_query_param = 'page_size'
+    max_page_size = 50  # Adjust if necessary
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AnalyzePGNView(APIView):
+    """Handles PGN analysis and returns move classifications."""
+    pagination_class = MoveCursorPagination
+
+    def post(self, request):
+        """Processes PGN input and returns analysis with move classifications."""
+        try:
+            data = request.data
+            pgn_string = data.get("pgn", "").strip()
+            cursor = data.get("cursor", '').strip()
+            if not pgn_string and not cursor:
+                return Response({"error": "PGN data missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Parse PGN
+            if pgn_string:
+                metadata, moves = parse_pgn(pgn_string)
+
+                # Process moves
+                analysis, results = analyze_pgn(moves, metadata)
+                # Paginate response
+                print(analysis)
+                for idx, move_data in enumerate(analysis):
+                    MoveAnalysis.objects.create(
+                        move_number=idx,
+                        move=move_data["m"],
+                        loss=move_data["loss"],
+                        best_move=move_data['bm'],
+                        openings=move_data['op'],
+                        classification=move_data['class']
+                    )
+
+             # Paginate using a QuerySet instead of a list
+            paginator = self.pagination_class()
+            queryset = MoveAnalysis.objects.order_by(
+                "created_at")  # Ensure ordering
+            result_page = paginator.paginate_queryset(queryset, request)
+
+            return paginator.get_paginated_response({
+                "result": results,
+                "analysis": MoveAnalysisSerializer(result_page, many=True).data
+            })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

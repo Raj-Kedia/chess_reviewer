@@ -1,86 +1,71 @@
 let pgnData = localStorage.getItem("pgnData");
 const analyzeButton = document.getElementById("analyzebutton");
 const toggleReviewButton = document.getElementById("toggleReview");
-const analyzeWindow = document.getElementById("analyzeWindow")
+const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
 
-// const progressBarContainer = document.createElement("div");
-// progressBarContainer.id = "progressBarContainer";
-// progressBarContainer.style.width = "100%";
-// progressBarContainer.style.height = "5px";
-// progressBarContainer.style.backgroundColor = "#ddd";
-// progressBarContainer.style.display = "none"; // Initially hidden
-
-// const progressBar = document.createElement("div");
-// progressBar.id = "progressBar";
-// progressBar.style.width = "5%";
-// progressBar.style.height = "100%";
-// progressBar.style.backgroundColor = "#4caf50"; // Green color
-
-// progressBarContainer.appendChild(progressBar);
-// resultWindow.prepend(progressBarContainer); // Add progress bar at the top
+let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
+let cursor = null;  // Cursor for pagination
 
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
         analyzeWindow.style.display = 'none';
         resultWindow.classList.remove("d-none");
-        // showProgressBar(); // Show progress bar
-        analyzeGame();
+        analyzeGame(true);  // First request with PGN
     }
 });
 
-// function showProgressBar() {
-//     progressBarContainer.style.display = "block";
-//     progressBar.style.width = "0%"; // Reset progress
-//     let progress = 0;
+function analyzeGame(firstRequest = false) {
+    if (!nextPageUrl) return;  // Stop if no more pages to fetch
 
-//     const interval = setInterval(() => {
-//         progress += 5;
-//         progressBar.style.width = `${progress}%`;
-//         if (progress >= 90) {
-//             clearInterval(interval);
-//         }
-//     }, 500);
+    console.log("Fetching:", nextPageUrl, "Cursor:", cursor);
 
-//     analyzeGame().then(() => {
-//         clearInterval(interval);
-//         progressBar.style.width = "100%"; // Complete the progress
-//         setTimeout(() => {
-//             progressBarContainer.style.display = "none"; // Hide after completion
-//         }, 500);
-//     });
-// }
+    const requestData = firstRequest
+        ? { pgn: pgnData }  // Send PGN only in the first request
+        : { cursor: cursor };  // Only send cursor in subsequent requests
 
-function analyzeGame() {
-    if (!pgnData) {
-        console.error("No PGN data found!");
-    }
-
-    fetch("./analyze_pgn/", {
+    fetch(nextPageUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pgn: pgnData }),
+        body: JSON.stringify(requestData),
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log("Server Response:", data);
+
             if (!data || !data.analysis || !data.result) {
                 console.error("Error: Invalid response from server");
-                // return reject();
+                return;
             }
 
             displayGameSummary(data.result);
             displayAnalysis(data.analysis);
-            updateBoardToLastMove(); // Ensure board is at the last move
 
-            // resolve(); // Mark analysis as complete
+            // Update nextPageUrl and cursor for the next request
+            nextPageUrl = data.next || null;  // Ensure we update nextPageUrl
+            cursor = data.cursor || null;  // Ensure cursor is updated
+
+            if (nextPageUrl && cursor) {
+                analyzeGame();  // Call again for the next page
+            }
         })
         .catch(error => {
             console.error("Error analyzing game:", error);
-            // reject();
         });
 }
+
+
+function showErrorInGameReviewWindow(errorMessage) {
+    const summaryDiv = document.getElementById("gameSummary");
+    summaryDiv.innerHTML = `<p style="color: red;">Error: ${errorMessage}</p>`;
+}
+
 function displayGameSummary(results) {
     const classification_types = [
         "Brilliant", "Great", "Best", "Excellent", "Good", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
@@ -111,14 +96,13 @@ function displayGameSummary(results) {
             ${classification_types.map((classification, index) => `
                 <tr>
                     <th scope="row">${classification}</th>
-                    <td>${results.white_arr[index + 1] || 0}</td>
+                    <td>${results.white_arr[index] || 0}</td>
                     <td>${getIcon(classification)}</td>
-                    <td>${results.black_arr[index + 1] || 0}</td>
+                    <td>${results.black_arr[index] || 0}</td>
                 </tr>
             `).join("")}
         </tbody>
     </table>`;
-
 }
 
 function getIcon(classification) {
@@ -172,6 +156,7 @@ function displayAnalysis(analysisData) {
             <td>${index % 2 === 0 ? (Math.floor(index / 2) + 1) + ". " : ""}${move.move}</td>
             <td>${move.classification}</td>
             <td>${move.best_move}</td>
+            <td>${move.opening_name}</td>
         `;
 
         // Store FEN position at each move for navigation
