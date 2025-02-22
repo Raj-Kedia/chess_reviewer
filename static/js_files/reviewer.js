@@ -16,11 +16,18 @@ analyzeButton.addEventListener("click", function () {
     }
 });
 
+function extractCursor(url) {
+    const params = new URLSearchParams(url.split('?')[1]);
+    return params.get('cursor');
+}
+
 function analyzeGame(firstRequest = false) {
     if (!nextPageUrl) return;  // Stop if no more pages to fetch
 
     console.log("Fetching:", nextPageUrl, "Cursor:", cursor);
-
+    if (!firstRequest) {
+        cursor = extractCursor(nextPageUrl); // Extract cursor for pagination
+    }
     const requestData = firstRequest
         ? { pgn: pgnData }  // Send PGN only in the first request
         : { cursor: cursor };  // Only send cursor in subsequent requests
@@ -30,33 +37,28 @@ function analyzeGame(firstRequest = false) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
     })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             console.log("Server Response:", data);
-
-            if (!data || !data.analysis || !data.result) {
-                console.error("Error: Invalid response from server");
+            if (!data || !data.results) {
+                showErrorInGameReviewWindow("Invalid response from server");
                 return;
             }
 
-            displayGameSummary(data.result);
-            displayAnalysis(data.analysis);
-
+            console.log('HEllo error is after')
+            if (data.results.result) { displayGameSummary(data.results.result); }
+            console.log('HEllo error is after display Game summary')
+            displayAnalysis(data.results.analysis);
+            console.log('HEllo error is after display Game summary and display analysis')
             // Update nextPageUrl and cursor for the next request
             nextPageUrl = data.next || null;  // Ensure we update nextPageUrl
-            cursor = data.cursor || null;  // Ensure cursor is updated
 
-            if (nextPageUrl && cursor) {
+            if (nextPageUrl) {
                 analyzeGame();  // Call again for the next page
             }
         })
         .catch(error => {
-            console.error("Error analyzing game:", error);
+            showErrorInGameReviewWindow("Error analyzing game:", error);
         });
 }
 
@@ -127,7 +129,6 @@ function getIcon(classification) {
 
 // Store FEN states for move history navigation
 let positions = [];
-
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('analysis-output');
     if (!outputDiv) {
@@ -135,36 +136,34 @@ function displayAnalysis(analysisData) {
         return;
     }
 
-    outputDiv.innerHTML = '';
     if (!analysisData || analysisData.length === 0) {
-        outputDiv.innerHTML = '<p>No analysis available.</p>';
         return;
     }
 
-    const resultTable = document.createElement('table');
-    resultTable.innerHTML = `
-        <tr>
-            <th>Move</th>
-            <th>Classification</th>
-            <th>Suggestion</th>
-        </tr>
-    `;
+    const resultTable = outputDiv.querySelector("table");
+    if (!resultTable) {
+        outputDiv.innerHTML = `
+            <table>
+                <tr>
+                    <th>Move</th>
+                    <th>Classification</th>
+                    <th>Suggestion</th>
+                    <th>Opening</th>
+                </tr>
+            </table>`;
+    }
 
     analysisData.forEach((move, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${index % 2 === 0 ? (Math.floor(index / 2) + 1) + ". " : ""}${move.move}</td>
+            <td>${move.move_number % 2 === 0 ? (Math.floor(move.move_number / 2) + 1) + ". " : ""}${move.move}</td>
             <td>${move.classification}</td>
             <td>${move.best_move}</td>
             <td>${move.opening_name}</td>
         `;
-
-        // Store FEN position at each move for navigation
         positions.push(move.fen);
-        resultTable.appendChild(row);
+        outputDiv.querySelector("table").appendChild(row);
     });
-
-    outputDiv.appendChild(resultTable);
 }
 
 // Ensure board starts at the last move

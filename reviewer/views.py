@@ -16,6 +16,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 from .serializer import *
+from django.db import connection
 
 
 def index(request):
@@ -229,10 +230,10 @@ def analyze_pgn(moves, metadata):
             prev_eval = eval_score
         print("completed analysis per move")
         total_moves = len(moves)
-        white_accuracy = (White_arr[0] + White_arr[1] +
-                          White_arr[2] + White_arr[3]) / total_moves * 100
-        black_accuracy = (Black_arr[0] + Black_arr[1] +
-                          Black_arr[2] + Black_arr[3]) / total_moves * 100
+        white_accuracy = (total_moves-(White_arr[-2] + White_arr[-3] +
+                          White_arr[-4] + White_arr[-5])) / total_moves * 100
+        black_accuracy = (total_moves - (Black_arr[-2] + Black_arr[-3] +
+                          Black_arr[-4] + Black_arr[-5])) / total_moves * 100
         results["white_accuracy"] = round(white_accuracy, 2)
         results["black_accuracy"] = round(black_accuracy, 2)
         results["black_arr"] = Black_arr
@@ -247,10 +248,8 @@ def analyze_pgn(moves, metadata):
 
 
 class MoveCursorPagination(CursorPagination):
-    ordering = 'm'  # Ordering by move identifier
-    page_size = 10  # Number of moves per page
-    page_size_query_param = 'page_size'
-    max_page_size = 50  # Adjust if necessary
+    page_size = 10
+    ordering = "id"  # Ensure ordering by created_at
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -262,39 +261,56 @@ class AnalyzePGNView(APIView):
         """Processes PGN input and returns analysis with move classifications."""
         try:
             data = request.data
-            pgn_string = data.get("pgn", "").strip()
-            cursor = data.get("cursor", '').strip()
+            pgn_string = cursor = None
+            if data.get("pgn"):
+                pgn_string = data.get("pgn", "").strip()
+            if data.get("cursor", ''):
+                cursor = data.get("cursor", '').strip()
             if not pgn_string and not cursor:
                 return Response({"error": "PGN data missing"}, status=status.HTTP_400_BAD_REQUEST)
-
             # Parse PGN
             if pgn_string:
+                MoveAnalysis.objects.all().delete()
+
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM sqlite_sequence WHERE name='reviewer_moveanalysis';")
+
                 metadata, moves = parse_pgn(pgn_string)
 
                 # Process moves
                 analysis, results = analyze_pgn(moves, metadata)
                 # Paginate response
                 print(analysis)
+
                 for idx, move_data in enumerate(analysis):
                     MoveAnalysis.objects.create(
                         move_number=idx,
-                        move=move_data["m"],
-                        loss=move_data["loss"],
+                        move=move_data['m'],
+                        loss=move_data['loss'],
                         best_move=move_data['bm'],
-                        openings=move_data['op'],
+                        opening_name=move_data['op'],
                         classification=move_data['class']
                     )
+                    print(move_data)
+                # Paginate using a QuerySet instead of a list
+                paginator = self.pagination_class()
+                queryset = MoveAnalysis.objects.all().order_by(
+                    "id")  # Ensure ordering
+                result_page = paginator.paginate_queryset(queryset, request)
 
-             # Paginate using a QuerySet instead of a list
-            paginator = self.pagination_class()
-            queryset = MoveAnalysis.objects.order_by(
-                "created_at")  # Ensure ordering
-            result_page = paginator.paginate_queryset(queryset, request)
+                return paginator.get_paginated_response({
+                    "result": results,
+                    "analysis": MoveAnalysisSerializer(result_page, many=True).data,
+                })
+            else:
+                paginator = self.pagination_class()
+                queryset = MoveAnalysis.objects.all().order_by("id")
+                result_page = paginator.paginate_queryset(queryset, request)
 
-            return paginator.get_paginated_response({
-                "result": results,
-                "analysis": MoveAnalysisSerializer(result_page, many=True).data
-            })
+                return paginator.get_paginated_response({
+                    "analysis": MoveAnalysisSerializer(result_page, many=True).data,
+                })
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
