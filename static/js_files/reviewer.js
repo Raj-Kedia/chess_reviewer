@@ -319,4 +319,5 @@ document.addEventListener("DOMContentLoaded", function () {
         currentMoveIndex = moveHistoryStack.length;
         board.position(game.fen());
     });
+
 });

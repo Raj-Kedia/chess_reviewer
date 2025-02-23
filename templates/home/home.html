@@ -103,7 +103,7 @@
   id="gameModal"
   tabindex="-1"
   aria-labelledby="gameModalLabel"
-  aria-hidden="true"
+  style="display: none"
 >
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -127,6 +127,13 @@
           Select Game
         </button>
         <ul class="list-group" id="gameList"></ul>
+        <button
+          class="btn btn-primary mb-3 w-100"
+          id="loadMore"
+          onclick="fetchGame(false)"
+        >
+          Load More...
+        </button>
       </div>
     </div>
   </div>
