@@ -4,10 +4,14 @@ const toggleReviewButton = document.getElementById("toggleReview");
 const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
-
+let depthValue = 15;
 let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
 
+document.getElementById("depthSlider").addEventListener("input", function () {
+    document.getElementById("depthValue").innerText = this.value;
+    depthValue = this.value;
+});
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
         analyzeWindow.style.display = 'none';
@@ -24,12 +28,12 @@ function extractCursor(url) {
 function analyzeGame(firstRequest = false) {
     if (!nextPageUrl) return;  // Stop if no more pages to fetch
 
-    console.log("Fetching:", nextPageUrl, "Cursor:", cursor);
+    console.log("Fetching:", nextPageUrl, "Cursor:", cursor, depthValue);
     if (!firstRequest) {
         cursor = extractCursor(nextPageUrl); // Extract cursor for pagination
     }
     const requestData = firstRequest
-        ? { pgn: pgnData }  // Send PGN only in the first request
+        ? { pgn: pgnData, depth: depthValue }  // Send PGN only in the first request
         : { cursor: cursor };  // Only send cursor in subsequent requests
 
     fetch(nextPageUrl, {
@@ -231,9 +235,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("pgnStatus").innerText = "No PGN found!";
     }
 
-    document.getElementById("depthSlider").addEventListener("input", function () {
-        document.getElementById("depthValue").innerText = this.value;
-    });
 
     function handleMove(source, target) {
         const move = game.move({ from: source, to: target, promotion: "q" });

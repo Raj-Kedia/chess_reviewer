@@ -57,9 +57,10 @@ classifications = {
 }
 
 
-def evaluate_position(engine: chess.engine.SimpleEngine, board: chess.Board) -> float:
+def evaluate_position(engine: chess.engine.SimpleEngine, board: chess.Board, depthValue: int) -> float:
     """Evaluates the board position using the engine."""
-    info = engine.analyse(board, chess.engine.Limit(depth=30))
+    print("depht: ", depthValue)
+    info = engine.analyse(board, chess.engine.Limit(depth=depthValue))
 
     print("Debug: Engine analysis info ->", info)  # 🔍 Print the full response
 
@@ -75,7 +76,7 @@ def evaluate_position(engine: chess.engine.SimpleEngine, board: chess.Board) -> 
     return score.score(mate_score=100000) if score.is_mate() else score.score()
 
 
-def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move_class):
+def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move_class, depthValue):
     print("start")
     if len(list(board.legal_moves)) == 1 and best_move == played_move:
         return classifications["forced"]
@@ -86,7 +87,7 @@ def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move
     if best_move in board.legal_moves:  # Safety check
         board.push(best_move)  # Play best move
         best_move_eval = evaluate_position(
-            engine, board)  # Evaluate new position
+            engine, board, depthValue)  # Evaluate new position
         board.pop()  # Undo the move
     else:
         # If best move is illegal (shouldn't happen)
@@ -154,7 +155,7 @@ def parse_pgn(pgn_string):
     return metadata, moves
 
 
-def analyze_pgn(moves, metadata):
+def analyze_pgn(moves, metadata, depthValue):
     analysis = []
     results = {}
     classfication_index = {
@@ -184,7 +185,7 @@ def analyze_pgn(moves, metadata):
         for move in moves:
             try:
                 best_move = engine.play(
-                    board, chess.engine.Limit(depth=20)).move
+                    board, chess.engine.Limit(depth=depthValue)).move
                 best = board.san(best_move)
                 print(type(best), type(best_move))
 
@@ -194,7 +195,7 @@ def analyze_pgn(moves, metadata):
                 raise ValueError(f"Invalid move: {move}")
 
             print("best move calcualated")
-            eval_score = evaluate_position(engine, board)
+            eval_score = evaluate_position(engine, board, depthValue)
             eval_loss = prev_eval - eval_score
             print('postion evaluated')
             curr_fen = board.fen()
@@ -208,7 +209,7 @@ def analyze_pgn(moves, metadata):
             else:
                 opening_name = 'unknown' if not opening_name else opening_name
                 classification = classify_move(
-                    eval_loss, best_move, board.peek(), eval_score, prev_move_class)
+                    eval_loss, best_move, board.peek(), eval_score, prev_move_class, depthValue)
             prev_move_class = classification
             print("classification is also done")
             print(move_color)
@@ -262,8 +263,11 @@ class AnalyzePGNView(APIView):
         try:
             data = request.data
             pgn_string = cursor = None
+            depthValue = 15
             if data.get("pgn"):
                 pgn_string = data.get("pgn", "").strip()
+            if data.get('depth'):
+                depthValue = data.get('depth', 0)
             if data.get("cursor", ''):
                 cursor = data.get("cursor", '').strip()
             if not pgn_string and not cursor:
@@ -279,7 +283,7 @@ class AnalyzePGNView(APIView):
                 metadata, moves = parse_pgn(pgn_string)
 
                 # Process moves
-                analysis, results = analyze_pgn(moves, metadata)
+                analysis, results = analyze_pgn(moves, metadata, depthValue)
                 # Paginate response
                 print(analysis)
 
