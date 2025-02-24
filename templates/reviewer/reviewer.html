@@ -19,7 +19,10 @@
 {% endblock %} {% block body %}
 <h1 class="text-center">Chess Reviewer</h1>
 <div class="container">
-  <div id="board"></div>
+  <div id="board-container" style="position: relative">
+    <div id="board"></div>
+    <canvas id="arrowCanvas"></canvas>
+  </div>
 
   <div class="review-panel">
     <h3>PGN Status</h3>
@@ -59,8 +62,7 @@
     <!-- Move History Window (Initially Hidden) -->
     <div id="moveHistoryWindow" class="move-list hidden">
       <h3>Move History</h3>
-      <div id="moveHistory"></div>
-      <h4>Move Details</h4>
+      <div id="opening_name"></div>
       <div id="moveDetails"></div>
       <div id="analysis-output"></div>
       <div class="controls">

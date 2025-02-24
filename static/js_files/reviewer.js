@@ -1,3 +1,4 @@
+// Global variables and elements
 let pgnData = localStorage.getItem("pgnData");
 const analyzeButton = document.getElementById("analyzebutton");
 const toggleReviewButton = document.getElementById("toggleReview");
@@ -7,6 +8,10 @@ const moveHistoryWindow = document.getElementById("moveHistoryWindow");
 let depthValue = 15;
 let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
+const game = new Chess();
+
+// Preload sound
+const moveSound = new Audio("/static/media/move-sound.mp3"); // Make sure this file exists
 
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
@@ -49,11 +54,10 @@ function analyzeGame(firstRequest = false) {
                 return;
             }
 
-            console.log('HEllo error is after')
-            if (data.results.result) { displayGameSummary(data.results.result); }
-            console.log('HEllo error is after display Game summary')
+            if (data.results.result) {
+                displayGameSummary(data.results.result);
+            }
             displayAnalysis(data.results.analysis);
-            console.log('HEllo error is after display Game summary and display analysis')
             // Update nextPageUrl and cursor for the next request
             nextPageUrl = data.next || null;  // Ensure we update nextPageUrl
 
@@ -65,7 +69,6 @@ function analyzeGame(firstRequest = false) {
             showErrorInGameReviewWindow("Error analyzing game:", error);
         });
 }
-
 
 function showErrorInGameReviewWindow(errorMessage) {
     const summaryDiv = document.getElementById("gameSummary");
@@ -97,7 +100,6 @@ function displayGameSummary(results) {
                 <td></td>
                 <td><div class="accuracy-box black">${results.black_accuracy}%</div></td>
             </tr>
-
             <!-- Move Classifications -->
             ${classification_types.map((classification, index) => `
                 <tr>
@@ -131,82 +133,222 @@ function getIcon(classification) {
     return `<img src="/static/media/${fileName}" alt="${classification}" class="move-icon">`;
 }
 
-// Store FEN states for move history navigation
+// Global arrays for storing positions and best move positions
 let positions = [];
+let best_move_position = [];
+let opening_names = []; // Store opening names corresponding to each move index
+
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('analysis-output');
     if (!outputDiv) {
         console.error("Error: analysis-output element not found");
         return;
     }
-
     if (!analysisData || analysisData.length === 0) {
         return;
     }
-
-    const resultTable = outputDiv.querySelector("table");
-    if (!resultTable) {
+    // Create or reset the table
+    if (!outputDiv.querySelector("table")) {
         outputDiv.innerHTML = `
             <table>
-                <tr>
-                    <th>Move</th>
-                    <th>Classification</th>
-                    <th>Suggestion</th>
-                    <th>Opening</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Move Number</th>
+                        <th>White Move</th>
+                        <th>Black Move</th>
+                    </tr>
+                </thead>
+                <tbody id="analysis-body"></tbody>
             </table>`;
     }
+    const tableBody = document.getElementById("analysis-body");
+    // Reset arrays
+    positions = [];
+    best_move_position = [];
+    opening_names = [];
 
     analysisData.forEach((move, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${move.move_number % 2 === 0 ? (Math.floor(move.move_number / 2) + 1) + ". " : ""}${move.move}</td>
-            <td>${move.classification}</td>
-            <td>${move.best_move}</td>
-            <td>${move.opening_name}</td>
-        `;
-        positions.push(move.fen);
-        outputDiv.querySelector("table").appendChild(row);
+        // Store opening name for each move. (Assuming move.opening_name is provided)
+        opening_names.push(move.opening_name || "Unknown");
+
+        // For move history table, pair white and black moves
+        if (index % 2 === 0) {
+            // Create a new row for white move with an empty black move cell
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${Math.floor(move.move_number / 2) + 1}</td>
+                <td>${move.move}</td>
+                <td id="black-move-${Math.floor(move.move_number / 2)}"></td>
+            `;
+            tableBody.appendChild(row);
+        } else {
+            // Fill black move in the corresponding row
+            const moveNum = Math.floor(move.move_number / 2);
+            const blackMoveCell = document.getElementById(`black-move-${moveNum}`);
+            if (blackMoveCell) {
+                blackMoveCell.textContent = move.move;
+            }
+        }
+
+        console.log("Processing move:", move.move);
+
+        // Process actual move and store FEN
+        let moveResult = game.move(move.move);
+        if (moveResult) {
+            let currentFen = game.fen(); // Get FEN after move
+            positions.push(currentFen);
+        } else {
+            // If move fails, push a null so indexes remain consistent.
+            positions.push(null);
+        }
+
+        // Process best move, store best move positions (if any)
+        if (move.best_move) {
+            let bestmoveResult = game.move(move.best_move);
+            if (bestmoveResult) {
+                best_move_position.push([bestmoveResult.from, bestmoveResult.to]);
+                game.undo(); // Undo best move so that game state remains correct
+            } else {
+                best_move_position.push(null);
+            }
+        } else {
+            best_move_position.push(null);
+        }
     });
+
+    console.log("Position array updated", positions);
+    setupMoveHistoryNavigation(positions, best_move_position);
+    // Delay updating board to ensure positions is fully populated
+    setTimeout(() => {
+        updateBoardToLastMove();
+    }, 100);
 }
 
-// Ensure board starts at the last move
 function updateBoardToLastMove() {
-    if (positions.length > 0) {
+    if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
+        // Play sound when board updates
+        moveSound.play();
+        // Highlight the corresponding move in history
+        highlightCurrentMove(positions.length - 1);
+        // Update opening name display
+        updateOpeningDisplay(positions.length - 1);
     }
 }
 
-// Allow clicking on a move to update the board position
-function setupMoveHistoryNavigation() {
-    const moveEntries = document.querySelectorAll("#analysis-output tr");
-
+function setupMoveHistoryNavigation(positions, best_move_position) {
+    const moveEntries = document.querySelectorAll("#analysis-body tr");
     moveEntries.forEach((entry, index) => {
         entry.addEventListener("click", function () {
-            if (positions[index]) {
-                board.position(positions[index]);
+            if (positions[index] && positions[index] !== null) {
+                board.position(positions[index]); // Update board position
+                moveSound.play(); // Play sound on move change
+                if (best_move_position[index] && best_move_position[index].length === 2) {
+                    console.log("Drawing best move arrow:", best_move_position[index]);
+                    showSuggestedMove(...best_move_position[index]); // Draw arrow
+                } else {
+                    console.log("No best move found for index:", index);
+                    // Clear arrow if needed
+                    clearArrowCanvas();
+                }
+                highlightCurrentMove(index);
+                updateOpeningDisplay(index);
             }
         });
     });
 }
 
-// Show classification icon on the last moved piece
-function showClassificationIcon(square, classification) {
-    let pieceElement = document.querySelector(`.square-${square}`);
-    if (!pieceElement) return;
-
-    let icon = document.createElement("img");
-    icon.src = `/static/media/${classification}.png`;
-    icon.classList.add("classification-icon");
-
-    pieceElement.appendChild(icon);
+// Function to highlight the move in the analysis table
+function highlightCurrentMove(index) {
+    // Remove existing highlight
+    document.querySelectorAll("#analysis-body tr").forEach(row => {
+        row.classList.remove("highlighted-move");
+    });
+    // Add highlight to the current move row
+    const moveEntries = document.querySelectorAll("#analysis-body tr");
+    if (moveEntries[index]) {
+        moveEntries[index].classList.add("highlighted-move");
+    }
 }
 
-// Display suggested move arrow
+// Function to update the opening display based on the current move
+function updateOpeningDisplay(index) {
+    // Assume there is an element with id "current-opening" in your summary area.
+    const openingDisplay = document.getElementById("opening_name");
+    if (openingDisplay) {
+        openingDisplay.textContent = "Opening: " + opening_names[index] || "Unknown Opening";
+    }
+}
+
+// Clear canvas arrow (if needed)
+function clearArrowCanvas() {
+    const canvas = document.getElementById("arrowCanvas");
+    if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
 function showSuggestedMove(from, to) {
-    board.addArrow({ from: from, to: to, color: 'blue' });
+    const canvas = document.getElementById("arrowCanvas");
+    const boardElement = document.getElementById("board");
+
+    // Set canvas size to match board size
+    canvas.width = boardElement.clientWidth;
+    canvas.height = boardElement.clientHeight;
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.pointerEvents = "none"; // Prevent blocking clicks
+
+    const ctx = canvas.getContext("2d");
+
+    // Convert chess square (e.g., "e4") to pixel coordinates
+    function getSquareCenter(square) {
+        const file = square.charCodeAt(0) - 97; // 'a' -> 0, etc.
+        const rank = 8 - parseInt(square[1]);  // '8' -> 0, etc.
+        const squareSize = canvas.width / 8;
+        return {
+            x: (file + 0.5) * squareSize,
+            y: (rank + 0.5) * squareSize
+        };
+    }
+
+    const start = getSquareCenter(from);
+    const end = getSquareCenter(to);
+
+    // Draw arrow on canvas
+    function drawArrow(ctx, from, to) {
+        const headLength = 15; // Arrowhead size
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+
+        ctx.strokeStyle = "green"; // Arrow color
+        ctx.lineWidth = 4;
+
+        // Draw line
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+
+        // Draw arrowhead
+        ctx.beginPath();
+        ctx.moveTo(to.x, to.y);
+        ctx.lineTo(to.x - headLength * Math.cos(angle - Math.PI / 6),
+            to.y - headLength * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(to.x - headLength * Math.cos(angle + Math.PI / 6),
+            to.y - headLength * Math.sin(angle + Math.PI / 6));
+        ctx.lineTo(to.x, to.y);
+        ctx.fillStyle = "blue";
+        ctx.fill();
+    }
+
+    // Clear previous arrow and draw new one
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawArrow(ctx, start, end);
 }
 
+// Toggle review panel
 if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     toggleReviewButton.addEventListener("click", function () {
         analyzeWindow.style.display = "none";
@@ -214,10 +356,8 @@ if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     });
 }
 
-
-
+// Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
-    const game = new Chess();
     let moveHistoryStack = [];
     let currentMoveIndex = 0;
     let selectedSquare = null;
@@ -235,7 +375,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("pgnStatus").innerText = "No PGN found!";
     }
 
-
     function handleMove(source, target) {
         const move = game.move({ from: source, to: target, promotion: "q" });
         if (move === null) return "snapback";
@@ -245,6 +384,8 @@ document.addEventListener("DOMContentLoaded", function () {
         currentMoveIndex = moveHistoryStack.length;
         board.position(game.fen());
         updateHistory();
+        // Play move sound when user moves piece
+        moveSound.play();
     }
 
     function highlightMoves(source) {
@@ -297,11 +438,10 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("undoMove").addEventListener("click", function () {
         if (currentMoveIndex > 0) {
             currentMoveIndex--;
-            game.reset();
-            for (let i = 0; i < currentMoveIndex; i++) {
-                game.move(moveHistoryStack[i]);
-            }
+            // Only update board position, not move history.
+            const targetFen = moveHistoryStack[currentMoveIndex] ? game.load(moveHistoryStack[currentMoveIndex]) : "start";
             board.position(game.fen());
+            moveSound.play();
         }
     });
 
@@ -310,14 +450,12 @@ document.addEventListener("DOMContentLoaded", function () {
             game.move(moveHistoryStack[currentMoveIndex]);
             currentMoveIndex++;
             board.position(game.fen());
+            moveSound.play();
         }
     });
 
     document.getElementById("endPosition").addEventListener("click", function () {
-        game.reset();
-        moveHistoryStack.forEach((move) => game.move(move));
-        currentMoveIndex = moveHistoryStack.length;
-        board.position(game.fen());
+        board.position(positions[positions.length - 1]);
+        moveSound.play();
     });
-
 });

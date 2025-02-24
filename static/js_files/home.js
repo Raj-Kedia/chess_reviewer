@@ -285,21 +285,8 @@ function checkPGNJSON(data) {
     }
     return true;
 }
-document.addEventListener("DOMContentLoaded", function () {
-    const modal = document.getElementById("gameModal");
 
-    modal.addEventListener("show.bs.modal", function () {
-        modal.removeAttribute("aria-hidden"); // Make it visible for assistive tech
-        modal.style.pointerEvents = "auto"; // Enable interactions
-        modal.style.overflow = "auto"; // Enable scrolling
-    });
 
-    modal.addEventListener("hidden.bs.modal", function () {
-        modal.setAttribute("aria-hidden", "true"); // Hide when fully closed
-        modal.style.pointerEvents = "none"; // Prevent interactions
-        modal.style.overflow = "hidden"; // Prevent unwanted scrolling when hidden
-    });
-});
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("gameModal");
 

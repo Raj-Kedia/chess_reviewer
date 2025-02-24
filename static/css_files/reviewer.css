@@ -94,3 +94,15 @@
     /* Text color for contrast */
     border: 2px solid white;
 }
+
+.classification-icon {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    top: 0;
+    left: 0;
+}
+
+.highlighted-move {
+    background-color: #fffa90;
+}
