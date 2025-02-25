@@ -10,8 +10,7 @@ let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
 const game = new Chess();
 
-// Preload sound
-const moveSound = new Audio("/static/media/move-sound.mp3"); // Make sure this file exists
+
 
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
@@ -137,6 +136,7 @@ function getIcon(classification) {
 let positions = [];
 let best_move_position = [];
 let opening_names = []; // Store opening names corresponding to each move index
+let move_arr = []
 
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('analysis-output');
@@ -211,7 +211,9 @@ function displayAnalysis(analysisData) {
             best_move_position.push(null);
         }
 
-        game.move(move.move); // Undo actual move separately
+        game.move(move.move);
+        move_arr.push(move.move) // Undo actual move separately
+        console.log(move_arr)
     });
 
     console.log("Position array updated", positions);
@@ -225,7 +227,7 @@ function displayAnalysis(analysisData) {
 function updateBoardToLastMove() {
     if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
-        moveSound.play();
+        playSound(move_arr[move_arr.length - 1]);
         highlightCurrentMove(positions.length - 1);
         updateOpeningDisplay(positions.length - 1);
     }
@@ -243,7 +245,7 @@ function setupMoveHistoryNavigation(positions, best_move_position) {
                 else if (turn === 2) idx = 2 * index + 1;
                 if (positions[idx] && positions[idx] !== null) {
                     board.position(positions[idx]); // Update the same board instance
-                    moveSound.play(); // Play move sound
+                    playSound(move_arr[idx]); // Play move sound
 
                     if (best_move_position[idx] && best_move_position[idx].length === 2) {
                         console.log("Drawing best move arrow:", best_move_position[idx]);
@@ -348,7 +350,7 @@ function showSuggestedMove(from, to) {
         ctx.lineTo(to.x - headLength * Math.cos(angle + Math.PI / 6),
             to.y - headLength * Math.sin(angle + Math.PI / 6));
         ctx.lineTo(to.x, to.y);
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = "green";
         ctx.fill();
     }
 
@@ -364,6 +366,27 @@ if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
         moveHistoryWindow.style.display = "block";
     });
 }
+
+function playSound(sanMove) {
+    let soundFile = "move.mp3"; // Default sound
+    console.log(sanMove);
+    if (sanMove.includes("#")) {
+        soundFile = "game_end.mp3"; // Stalemate or Checkmate
+    } else if (sanMove.includes("+")) {
+        soundFile = "check.mp3"; // Check move
+    } else if (sanMove.includes("=")) {
+        soundFile = "promote.mp3"; // Promotion
+    }
+    else if (sanMove.includes("O-O") || sanMove.includes("O-O-O")) {
+        soundFile = "castle.mp3"; // Castling
+    } else if (sanMove.includes("x")) {
+        soundFile = "capture.mp3"; // Capture move
+    }
+
+    const sound = new Audio(`/static/media/${soundFile}`); // Assuming sounds are in a 'sounds' folder
+    sound.play();
+}
+
 
 // Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
@@ -394,7 +417,7 @@ document.addEventListener("DOMContentLoaded", function () {
         board.position(game.fen());
         updateHistory();
         // Play move sound when user moves piece
-        moveSound.play();
+        // playSound();
     }
 
     function highlightMoves(source) {
@@ -467,4 +490,5 @@ document.addEventListener("DOMContentLoaded", function () {
         board.position(positions[positions.length - 1]);
         moveSound.play();
     });
+
 });
