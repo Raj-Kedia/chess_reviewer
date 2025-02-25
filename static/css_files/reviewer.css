@@ -104,5 +104,6 @@
 }
 
 .highlighted-move {
-    background-color: #fffa90;
+    background-color: #787875;
+    box-shadow: inset;
 }

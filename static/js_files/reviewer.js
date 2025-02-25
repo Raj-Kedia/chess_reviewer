@@ -163,10 +163,6 @@ function displayAnalysis(analysisData) {
     }
     const tableBody = document.getElementById("analysis-body");
     // Reset arrays
-    positions = [];
-    best_move_position = [];
-    opening_names = [];
-
     analysisData.forEach((move, index) => {
         // Store opening name for each move. (Assuming move.opening_name is provided)
         opening_names.push(move.opening_name || "Unknown");
@@ -192,28 +188,30 @@ function displayAnalysis(analysisData) {
 
         console.log("Processing move:", move.move);
 
-        // Process actual move and store FEN
+
+        // **Process actual move**
         let moveResult = game.move(move.move);
         if (moveResult) {
-            let currentFen = game.fen(); // Get FEN after move
+            let currentFen = game.fen();
             positions.push(currentFen);
         } else {
-            // If move fails, push a null so indexes remain consistent.
             positions.push(null);
         }
-
-        // Process best move, store best move positions (if any)
+        game.undo();
+        // **Process best move**
         if (move.best_move) {
             let bestmoveResult = game.move(move.best_move);
             if (bestmoveResult) {
                 best_move_position.push([bestmoveResult.from, bestmoveResult.to]);
-                game.undo(); // Undo best move so that game state remains correct
             } else {
                 best_move_position.push(null);
             }
+            game.undo(); // Undo best move separately
         } else {
             best_move_position.push(null);
         }
+
+        game.move(move.move); // Undo actual move separately
     });
 
     console.log("Position array updated", positions);
@@ -227,47 +225,58 @@ function displayAnalysis(analysisData) {
 function updateBoardToLastMove() {
     if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
-        // Play sound when board updates
         moveSound.play();
-        // Highlight the corresponding move in history
         highlightCurrentMove(positions.length - 1);
-        // Update opening name display
         updateOpeningDisplay(positions.length - 1);
     }
 }
 
 function setupMoveHistoryNavigation(positions, best_move_position) {
     const moveEntries = document.querySelectorAll("#analysis-body tr");
+    console.log("inside of setupmovehistorynavigation")
+    let idx = 0;
     moveEntries.forEach((entry, index) => {
-        entry.addEventListener("click", function () {
-            if (positions[index] && positions[index] !== null) {
-                board.position(positions[index]); // Update board position
-                moveSound.play(); // Play sound on move change
-                if (best_move_position[index] && best_move_position[index].length === 2) {
-                    console.log("Drawing best move arrow:", best_move_position[index]);
-                    showSuggestedMove(...best_move_position[index]); // Draw arrow
-                } else {
-                    console.log("No best move found for index:", index);
-                    // Clear arrow if needed
-                    clearArrowCanvas();
+        entry.querySelectorAll("td").forEach((cell, turn) => {
+            cell.addEventListener("click", function () {
+                console.log(turn)
+                if (turn === 1) idx = 2 * index;
+                else if (turn === 2) idx = 2 * index + 1;
+                if (positions[idx] && positions[idx] !== null) {
+                    board.position(positions[idx]); // Update the same board instance
+                    moveSound.play(); // Play move sound
+
+                    if (best_move_position[idx] && best_move_position[idx].length === 2) {
+                        console.log("Drawing best move arrow:", best_move_position[idx]);
+                        showSuggestedMove(...best_move_position[idx]); // Draw arrow
+                    } else {
+                        console.log("No best move found for index:", idx);
+                        clearArrowCanvas();
+                    }
+                    console.log(positions[idx], turn)
+                    console.log(best_move_position[idx], turn)
+                    highlightCurrentMove(index, turn);
+                    updateOpeningDisplay(idx);
                 }
-                highlightCurrentMove(index);
-                updateOpeningDisplay(index);
-            }
+            });
         });
     });
 }
 
+
 // Function to highlight the move in the analysis table
-function highlightCurrentMove(index) {
-    // Remove existing highlight
-    document.querySelectorAll("#analysis-body tr").forEach(row => {
-        row.classList.remove("highlighted-move");
+function highlightCurrentMove(index, turn) {
+    // Remove existing highlights
+    document.querySelectorAll("#analysis-body td").forEach(cell => {
+        cell.classList.remove("highlighted-move");
     });
-    // Add highlight to the current move row
+
+    // Find the correct move cell to highlight
     const moveEntries = document.querySelectorAll("#analysis-body tr");
     if (moveEntries[index]) {
-        moveEntries[index].classList.add("highlighted-move");
+        const moveCells = moveEntries[index].querySelectorAll("td");
+        if (moveCells[turn]) {
+            moveCells[turn].classList.add("highlighted-move");
+        }
     }
 }
 
