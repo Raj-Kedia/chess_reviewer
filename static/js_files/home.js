@@ -41,6 +41,12 @@ async function fetchGame(firstRequest = true) {
         return;
     }
 
+    const loaderOverlay = document.getElementById("loader-overlay");
+
+    // Show loader and disable background interaction
+    loaderOverlay.style.display = "flex";
+    document.body.classList.add("loading");
+    console.log(loaderOverlay.style.display);
     if (!nextPageUrl) return;  // Stop if no more pages to fetch
 
     const requestData = firstRequest
@@ -72,6 +78,13 @@ async function fetchGame(firstRequest = true) {
     } catch (error) {
         alert("Error fetching games: " + error);
     }
+    setTimeout(() => {
+        console.log("Game Data Fetched!");
+
+        // Hide loader and re-enable background interaction
+        loaderOverlay.style.display = "none";
+        document.body.classList.remove("loading");
+    });
 }
 
 function displayGames(newGames) {

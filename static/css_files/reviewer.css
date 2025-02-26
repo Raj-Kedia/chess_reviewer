@@ -106,4 +106,7 @@
 .highlighted-move {
     background-color: #787875;
     box-shadow: inset;
+    border: #000;
+    border-radius: 4%;
+
 }
