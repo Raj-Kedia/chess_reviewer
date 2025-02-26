@@ -63,11 +63,19 @@ async function fetchGame(firstRequest = true) {
         let data = await response.json();
         console.log("Server Response:", data);
 
+
         if (!data || !data.results) {
-            confirmSelection.innerHTML = ("Invalid response from server");
+            if (!data) {
+                alert("Invalid response from server: ", data.error);
+            }
+            if (data.results.size === 0) {
+                alert("No more games available to fetch!!")
+            }
+            loaderOverlay.style.display = "none";
+            document.body.classList.remove("loading");
             return;
         }
-
+        gameData = [];
         gameData.push(...data.results);  // Append new games
         displayGames(gameData);  // Update the UI
 
@@ -77,6 +85,8 @@ async function fetchGame(firstRequest = true) {
         }
     } catch (error) {
         alert("Error fetching games: " + error);
+        loaderOverlay.style.display = "none";
+        document.body.classList.remove("loading");
     }
     setTimeout(() => {
         console.log("Game Data Fetched!");
