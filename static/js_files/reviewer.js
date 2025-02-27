@@ -10,7 +10,10 @@ let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
 const game = new Chess();
 let currentMoveIndex = 0;
-
+const playerWhite = document.getElementById("1-username");
+const playerBlack = document.getElementById("0-username");
+playerBlack.innerHTML = '';
+playerWhite.innerHTML = '';
 
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
@@ -91,6 +94,15 @@ function displayGameSummary(results) {
         "Blunder": "Dark_Red",
     }
     const summaryDiv = document.getElementById("gameSummary");
+    playerWhite.innerHTML = `
+    <img src="/static/media/pawn_profile.svg" alt="profile" width="40px" height="40px">
+    <strong>${results.White} (${results.WhiteElo})</strong>
+`;
+
+    playerBlack.innerHTML = `
+    <img src="/static/media/pawn_profile.svg" alt="profile" width="40px" height="40px">
+    <strong>${results.Black} (${results.BlackElo})</strong>
+`;
 
     summaryDiv.innerHTML = `
     <table class="table">
@@ -482,6 +494,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("flipBoard").addEventListener("click", function () {
         board.flip();
+        let temp = playerWhite.innerHTML;
+        playerWhite.innerHTML = playerBlack.innerHTML;
+        playerBlack.innerHTML = temp;
+        console.log(playerBlack.innerHTML);
+
     });
 
     document.getElementById("startPosition").addEventListener("click", function () {

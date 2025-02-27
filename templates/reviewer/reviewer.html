@@ -19,9 +19,19 @@
 {% endblock %} {% block body %}
 <h1 class="text-center">Chess Reviewer</h1>
 <div class="container">
-  <div id="board-container" style="position: relative">
-    <div id="board"></div>
-    <canvas id="arrowCanvas"></canvas>
+  <div id="game-container">
+    <div class="card" id="0-black">
+      <div class="card-body" id="0-username">Black Player</div>
+    </div>
+
+    <div id="board-container">
+      <div id="board"></div>
+      <canvas id="arrowCanvas"></canvas>
+    </div>
+
+    <div class="card" id="player-1">
+      <div class="card-body" id="1-username">White Player</div>
+    </div>
   </div>
 
   <div class="review-panel">
