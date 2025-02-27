@@ -9,7 +9,7 @@ let depthValue = 15;
 let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
 const game = new Chess();
-
+let currentMoveIndex = 0;
 
 
 document.getElementById("depthSlider").addEventListener("input", function () {
@@ -78,7 +78,18 @@ function displayGameSummary(results) {
     const classification_types = [
         "Brilliant", "Great", "Best", "Excellent", "Good", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
     ];
-
+    const color_index = {
+        "Brilliant": "Teal",
+        "Great": "Dark_Blue",
+        "Best": "Olive_Green",
+        "Excellent": "Green",
+        "Good": "Muted_Green",
+        "Book": "Brown",
+        "Inaccuracy": "Yellow_Orange",
+        "Mistake": "Orange",
+        "Miss": "Red",
+        "Blunder": "Dark_Red",
+    }
     const summaryDiv = document.getElementById("gameSummary");
 
     summaryDiv.innerHTML = `
@@ -100,36 +111,44 @@ function displayGameSummary(results) {
                 <td><div class="accuracy-box black">${results.black_accuracy}%</div></td>
             </tr>
             <!-- Move Classifications -->
-            ${classification_types.map((classification, index) => `
-                <tr>
-                    <th scope="row">${classification}</th>
-                    <td>${results.white_arr[index] || 0}</td>
-                    <td>${getIcon(classification)}</td>
-                    <td>${results.black_arr[index] || 0}</td>
-                </tr>
-            `).join("")}
+            ${classification_types.map((classification, index) => {
+        // Define colors based on values
+        const whiteColor = color_index[classification];
+        const blackColor = color_index[classification];
+
+        return `
+                    <tr>
+                        <th scope="row" style="text-align: center; vertical-align: middle;">${classification}</th>
+                        <td style="text-align: center; vertical-align: middle; color: ${whiteColor};"><strong>${results.white_arr[index]}</strong></td>
+                        <td style="text-align: center; vertical-align: middle;">${getIcon(classification)}</td>
+                        <td style="text-align: center; vertical-align: middle; color: ${blackColor};"><strong>${results.black_arr[index]}</strong></td>
+                    </tr>
+                `;
+    }).join("")}
+            
+            
         </tbody>
     </table>`;
 }
 
 function getIcon(classification) {
     const icons = {
-        "Brilliant": "brilliant.png",
-        "Great": "great.png",
-        "Best": "best.png",
-        "Excellent": "excellent.png",
-        "Good": "good.png",
-        "Book": "book.png",
-        "Inaccuracy": "inaccuracy.png",
-        "Mistake": "mistake.png",
-        "Miss": "miss.png",
-        "Blunder": "blunder.png"
+        "Brilliant": "brilliant.svg",
+        "Great": "great.svg",
+        "Best": "best.svg",
+        "Excellent": "excellent.svg",
+        "Good": "good.svg",
+        "Book": "book.svg",
+        "Inaccuracy": "inaccuracy.svg",
+        "Mistake": "mistake.svg",
+        "Miss": "miss.svg",
+        "Blunder": "blunder.svg"
     };
 
     const fileName = icons[classification];
     if (!fileName) return "";
 
-    return `<img src="/static/media/${fileName}" alt="${classification}" class="move-icon">`;
+    return `<img src="/static/media/${fileName}" alt="${classification}" class="move-icon" width='30px' height='30px'>`;
 }
 
 // Global arrays for storing positions and best move positions
@@ -276,6 +295,8 @@ function highlightCurrentMove(index, turn) {
     const moveEntries = document.querySelectorAll("#analysis-body tr");
     if (moveEntries[index]) {
         const moveCells = moveEntries[index].querySelectorAll("td");
+        currentMoveIndex = 2 * index + (turn - 1);
+        console.log(currentMoveIndex)
         if (moveCells[turn]) {
             moveCells[turn].classList.add("highlighted-move");
         }
@@ -382,8 +403,11 @@ function playSound(sanMove) {
     } else if (sanMove.includes("x")) {
         soundFile = "capture.mp3"; // Capture move
     }
+    else {
+        soundFile = "move.mp3";
+    }
 
-    const sound = new Audio(`/static/media/${soundFile}`); // Assuming sounds are in a 'sounds' folder
+    const sound = new Audio(`/static/media/${soundFile}`);
     sound.play();
 }
 
@@ -391,7 +415,6 @@ function playSound(sanMove) {
 // Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
-    let currentMoveIndex = 0;
     let selectedSquare = null;
 
     window.board = Chessboard("board", {
@@ -462,33 +485,87 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.getElementById("startPosition").addEventListener("click", function () {
-        currentMoveIndex = 0;
-        game.reset();
-        board.position("start");
+        idx = 0
+        board.position(positions[idx]); // Update the same board instance
+        playSound(move_arr[idx]); // Play move sound
+
+        if (best_move_position[idx] && best_move_position[idx].length === 2) {
+            console.log("Drawing best move arrow:", best_move_position[idx]);
+            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+        } else {
+            console.log("No best move found for index:", idx);
+            clearArrowCanvas();
+        }
+        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
+        else { turn = 1; index = idx / 2; }
+        console.log(positions[idx], turn)
+        console.log(best_move_position[idx], turn)
+        console.log(index, turn)
+        highlightCurrentMove(index, turn);
+        updateOpeningDisplay(idx);
     });
 
     document.getElementById("undoMove").addEventListener("click", function () {
-        if (currentMoveIndex > 0) {
-            currentMoveIndex--;
-            // Only update board position, not move history.
-            const targetFen = moveHistoryStack[currentMoveIndex] ? game.load(moveHistoryStack[currentMoveIndex]) : "start";
-            board.position(game.fen());
-            moveSound.play();
+        idx = currentMoveIndex - 1;
+        board.position(positions[idx]); // Update the same board instance
+        playSound(move_arr[idx]); // Play move sound
+
+        if (best_move_position[idx] && best_move_position[idx].length === 2) {
+            console.log("Drawing best move arrow:", best_move_position[idx]);
+            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+        } else {
+            console.log("No best move found for index:", idx);
+            clearArrowCanvas();
         }
+        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
+        else { turn = 1; index = idx / 2; }
+        console.log(positions[idx], turn)
+        console.log(best_move_position[idx], turn)
+        console.log(index, turn)
+        highlightCurrentMove(index, turn);
+        updateOpeningDisplay(idx);
     });
 
     document.getElementById("redoMove").addEventListener("click", function () {
-        if (currentMoveIndex < moveHistoryStack.length) {
-            game.move(moveHistoryStack[currentMoveIndex]);
-            currentMoveIndex++;
-            board.position(game.fen());
-            moveSound.play();
+        idx = currentMoveIndex + 1;
+        board.position(positions[idx]); // Update the same board instance
+        playSound(move_arr[idx]); // Play move sound
+
+        if (best_move_position[idx] && best_move_position[idx].length === 2) {
+            console.log("Drawing best move arrow:", best_move_position[idx]);
+            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+        } else {
+            console.log("No best move found for index:", idx);
+            clearArrowCanvas();
         }
+        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
+        else { turn = 1; index = idx / 2; }
+        console.log(positions[idx], turn)
+        console.log(best_move_position[idx], turn)
+        console.log(index, turn)
+        highlightCurrentMove(index, turn);
+        updateOpeningDisplay(idx);
     });
 
     document.getElementById("endPosition").addEventListener("click", function () {
-        board.position(positions[positions.length - 1]);
-        moveSound.play();
+        idx = positions.length - 1
+        board.position(positions[idx]); // Update the same board instance
+        playSound(move_arr[idx]); // Play move sound
+
+        if (best_move_position[idx] && best_move_position[idx].length === 2) {
+            console.log("Drawing best move arrow:", best_move_position[idx]);
+            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+        } else {
+            console.log("No best move found for index:", idx);
+            clearArrowCanvas();
+        }
+        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
+        else { turn = 1; index = idx / 2; }
+        console.log(positions[idx], turn)
+        console.log(best_move_position[idx], turn)
+        console.log(index, turn)
+        highlightCurrentMove(index, turn);
+        updateOpeningDisplay(idx);
     });
 
 });
