@@ -65,11 +65,8 @@ async function fetchGame(firstRequest = true) {
 
 
         if (!data || !data.results) {
-            if (!data) {
+            if (!data || !data.results) {
                 alert("Invalid response from server: ", data.error);
-            }
-            if (data.results.size === 0) {
-                alert("No more games available to fetch!!")
             }
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
