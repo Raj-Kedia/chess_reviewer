@@ -26,10 +26,12 @@
     display: block;
 }
 
-.controls {
+/* .controls {
+    position: sticky;
     display: flex;
     justify-content: space-around;
     padding: 10px;
+    position: sticky;
 }
 
 .controls button {
@@ -37,7 +39,7 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-}
+} */
 
 .hidden {
     display: none;
@@ -132,4 +134,89 @@
     text-align: left;
     margin: 5px 0;
     /* Ensure consistent spacing */
+}
+
+#pgnStatus {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+    /* Initially hidden */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#resultWindow {
+    display: none;
+    flex-direction: column;
+    height: 400px;
+    /* Set a fixed height */
+    width: 100%;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+    /* Adjust as needed */
+}
+
+#moveHistoryWindow {
+    display: none;
+    flex-direction: column;
+    height: 400px;
+    /* Set a fixed height */
+    width: 100%;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 20px;
+    /* Ensures spacing from resultWindow */
+}
+
+/* Sticky Opening Name */
+#opening_name {
+    position: sticky;
+    top: 0;
+    background: #f9f9f9;
+    padding: 5px;
+    z-index: 2;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Scrollable Move Details */
+#moveDetails {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 250px;
+    /* Ensures moves are scrollable */
+    padding: 5px;
+}
+
+/* Sticky Controls at Bottom */
+.controls {
+    position: sticky;
+    bottom: 0;
+    background: #f9f9f9;
+    padding: 10px;
+    z-index: 2;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Buttons Styling */
+.controls button {
+    flex: 1;
+    margin: 0 5px;
+    border: none;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.controls button:hover {
+    background: #0056b3;
 }

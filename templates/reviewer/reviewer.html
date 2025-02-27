@@ -35,13 +35,13 @@
   </div>
 
   <div class="review-panel">
-    <h3>PGN Status</h3>
     <div id="pgnStatus" class="alert alert-success">
       PGN parsed successfully!
     </div>
 
     <!-- Analyze Window (Initially Visible) -->
     <div id="analyzeWindow" class="analyze-panel">
+      <h3>Analyze Your Game!</h3>
       <label for="depthSlider"><strong>Depth:</strong></label>
       <input
         type="range"
@@ -59,22 +59,11 @@
       </button>
     </div>
 
-    <!-- Analysis Window (Initially Visible) -->
-    <div id="resultWindow" class="analyze-panel d-none">
-      <h2>Game Analysis Summary</h2>
-      <div id="gameSummary" class="summary-panel"></div>
-
-      <button class="btn btn-primary mt-3" id="toggleReview">
-        Review Moves
-      </button>
-    </div>
-
     <!-- Move History Window (Initially Hidden) -->
     <div id="moveHistoryWindow" class="move-list hidden">
       <h3>Move History</h3>
       <div id="opening_name"></div>
       <div id="moveDetails"></div>
-      <div id="analysis-output"></div>
       <div class="controls">
         <button id="flipBoard" title="Flip Board">
           <i class="fa fa-retweet"></i>
@@ -92,6 +81,16 @@
           <i class="fa fa-fast-forward"></i>
         </button>
       </div>
+    </div>
+
+    <!-- Analysis Window (Initially Visible) -->
+    <div id="resultWindow" class="analyze-panel">
+      <h2>Game Analysis Summary</h2>
+      <div id="gameSummary" class="summary-panel"></div>
+
+      <button class="btn btn-primary mt-3" id="toggleReview">
+        Review Moves
+      </button>
     </div>
   </div>
 </div>

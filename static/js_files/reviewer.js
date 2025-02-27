@@ -14,7 +14,15 @@ const playerWhite = document.getElementById("1-username");
 const playerBlack = document.getElementById("0-username");
 playerBlack.innerHTML = '';
 playerWhite.innerHTML = '';
+function showPGNStatus() {
+    const pgnStatus = document.getElementById("pgnStatus");
+    pgnStatus.style.display = "block"; // Show alert
 
+    setTimeout(() => {
+        pgnStatus.style.display = "none"; // Hide after 5 seconds
+    }, 5000);
+}
+showPGNStatus();
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
     depthValue = this.value;
@@ -22,7 +30,7 @@ document.getElementById("depthSlider").addEventListener("input", function () {
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
         analyzeWindow.style.display = 'none';
-        resultWindow.classList.remove("d-none");
+        resultWindow.style.display = 'block';
         analyzeGame(true);  // First request with PGN
     }
 });
@@ -170,7 +178,7 @@ let opening_names = []; // Store opening names corresponding to each move index
 let move_arr = []
 
 function displayAnalysis(analysisData) {
-    const outputDiv = document.getElementById('analysis-output');
+    const outputDiv = document.getElementById('moveDetails');
     if (!outputDiv) {
         console.error("Error: analysis-output element not found");
         return;
@@ -184,9 +192,6 @@ function displayAnalysis(analysisData) {
             <table>
                 <thead>
                     <tr>
-                        <th>Move Number</th>
-                        <th>White Move</th>
-                        <th>Black Move</th>
                     </tr>
                 </thead>
                 <tbody id="analysis-body"></tbody>
