@@ -5,7 +5,7 @@ const toggleReviewButton = document.getElementById("toggleReview");
 const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
-let depthValue = 15;
+let depthValue = 20;
 let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
 let cursor = null;  // Cursor for pagination
 const game = new Chess();
@@ -14,6 +14,8 @@ const playerWhite = document.getElementById("1-username");
 const playerBlack = document.getElementById("0-username");
 playerBlack.innerHTML = '';
 playerWhite.innerHTML = '';
+const loaderOverlay = document.getElementById("loader-overlay");
+
 function showPGNStatus() {
     const pgnStatus = document.getElementById("pgnStatus");
     pgnStatus.style.display = "block"; // Show alert
@@ -39,17 +41,23 @@ function extractCursor(url) {
     const params = new URLSearchParams(url.split('?')[1]);
     return params.get('cursor');
 }
-
 function analyzeGame(firstRequest = false) {
-    if (!nextPageUrl) return;  // Stop if no more pages to fetch
+    if (!nextPageUrl) return; // Stop if no more pages to fetch
 
     console.log("Fetching:", nextPageUrl, "Cursor:", cursor, depthValue);
     if (!firstRequest) {
         cursor = extractCursor(nextPageUrl); // Extract cursor for pagination
     }
+
     const requestData = firstRequest
-        ? { pgn: pgnData, depth: depthValue }  // Send PGN only in the first request
-        : { cursor: cursor };  // Only send cursor in subsequent requests
+        ? { pgn: pgnData, depth: depthValue } // Send PGN only in the first request
+        : { cursor: cursor }; // Only send cursor in subsequent requests
+
+    if (firstRequest) {
+
+        loaderOverlay.style.display = "flex";
+        document.body.classList.add("loading");
+    }
 
     fetch(nextPageUrl, {
         method: "POST",
@@ -60,25 +68,38 @@ function analyzeGame(firstRequest = false) {
         .then(data => {
             console.log("Server Response:", data);
             if (!data || !data.results) {
-                showErrorInGameReviewWindow("Invalid response from server");
+                console.log(data.error);
+                alert(data.error);
+                loaderOverlay.style.display = 'none';
+                document.body.classList.remove('loading');
                 return;
+            }
+
+            if (firstRequest) {
+                loaderOverlay.style.display = "none";
+                document.body.classList.remove("loading");
             }
 
             if (data.results.result) {
                 displayGameSummary(data.results.result);
             }
             displayAnalysis(data.results.analysis);
+
             // Update nextPageUrl and cursor for the next request
-            nextPageUrl = data.next || null;  // Ensure we update nextPageUrl
+            nextPageUrl = data.next || null;
 
             if (nextPageUrl) {
-                analyzeGame();  // Call again for the next page
+                analyzeGame(); // Call again for the next page
             }
         })
         .catch(error => {
-            showErrorInGameReviewWindow("Error analyzing game:", error);
+            alert("Error in analyzing game:", error);
+
+            loaderOverlay.style.display = "none";
+            document.body.classList.remove("loading");
         });
 }
+
 
 function showErrorInGameReviewWindow(errorMessage) {
     const summaryDiv = document.getElementById("gameSummary");
@@ -428,7 +449,6 @@ function playSound(sanMove) {
     sound.play();
 }
 
-
 // Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
@@ -529,6 +549,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("undoMove").addEventListener("click", function () {
         idx = currentMoveIndex - 1;
+        if (idx < 0) {
+            return;
+        }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
 
@@ -550,6 +573,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("redoMove").addEventListener("click", function () {
         idx = currentMoveIndex + 1;
+        if (idx >= positions.length) {
+            return;
+        }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
 
