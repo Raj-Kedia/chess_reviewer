@@ -172,19 +172,19 @@ function displayGameSummary(results) {
     </table>`;
 }
 
+const icons = {
+    "Brilliant": "brilliant.svg",
+    "Great": "great.svg",
+    "Best": "best.svg",
+    "Excellent": "excellent.svg",
+    "Good": "good.svg",
+    "Book": "book.svg",
+    "Inaccuracy": "inaccuracy.svg",
+    "Mistake": "mistake.svg",
+    "Miss": "miss.svg",
+    "Blunder": "blunder.svg"
+};
 function getIcon(classification) {
-    const icons = {
-        "Brilliant": "brilliant.svg",
-        "Great": "great.svg",
-        "Best": "best.svg",
-        "Excellent": "excellent.svg",
-        "Good": "good.svg",
-        "Book": "book.svg",
-        "Inaccuracy": "inaccuracy.svg",
-        "Mistake": "mistake.svg",
-        "Miss": "miss.svg",
-        "Blunder": "blunder.svg"
-    };
 
     const fileName = icons[classification];
     if (!fileName) return "";
@@ -197,7 +197,7 @@ let positions = [];
 let best_move_position = [];
 let opening_names = []; // Store opening names corresponding to each move index
 let move_arr = []
-
+let classification_arr = [];
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('moveDetails');
     if (!outputDiv) {
@@ -267,9 +267,9 @@ function displayAnalysis(analysisData) {
         } else {
             best_move_position.push(null);
         }
-
         game.move(move.move);
-        move_arr.push(move.move) // Undo actual move separately
+        move_arr.push(move.move)
+        classification_arr.push(move.classification);// Undo actual move separately
         console.log(move_arr)
     });
 
@@ -285,8 +285,10 @@ function updateBoardToLastMove() {
     if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
         playSound(move_arr[move_arr.length - 1]);
+        addClassificationIcon(move_arr[move_arr.length - 1], classification_arr[classification_arr.length - 1])
         highlightCurrentMove(positions.length - 1);
         updateOpeningDisplay(positions.length - 1);
+
     }
 }
 
@@ -303,7 +305,7 @@ function setupMoveHistoryNavigation(positions, best_move_position) {
                 if (positions[idx] && positions[idx] !== null) {
                     board.position(positions[idx]); // Update the same board instance
                     playSound(move_arr[idx]); // Play move sound
-
+                    addClassificationIcon(move_arr[idx], classification_arr[idx]);
                     if (best_move_position[idx] && best_move_position[idx].length === 2) {
                         console.log("Drawing best move arrow:", best_move_position[idx]);
                         showSuggestedMove(...best_move_position[idx]); // Draw arrow
@@ -449,6 +451,11 @@ function playSound(sanMove) {
     sound.play();
 }
 
+function getDestinationSquare(move) {
+    // Regex to extract the last two characters representing the square
+    let match = move.match(/[a-h][1-8]$/);
+    return match ? match[0] : null;
+}
 // Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
@@ -530,6 +537,7 @@ document.addEventListener("DOMContentLoaded", function () {
         idx = 0
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
+        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
             console.log("Drawing best move arrow:", best_move_position[idx]);
@@ -554,6 +562,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
+        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
             console.log("Drawing best move arrow:", best_move_position[idx]);
@@ -578,6 +587,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
+        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
             console.log("Drawing best move arrow:", best_move_position[idx]);
@@ -599,6 +609,7 @@ document.addEventListener("DOMContentLoaded", function () {
         idx = positions.length - 1
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
+        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
             console.log("Drawing best move arrow:", best_move_position[idx]);
