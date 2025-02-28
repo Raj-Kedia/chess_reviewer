@@ -56,7 +56,6 @@ class AnalyzePGNView(APIView):
                 # Process moves
                 analysis, results = analyze_pgn(moves, metadata, depthValue)
                 # Paginate response
-                print(analysis)
 
                 for idx, move_data in enumerate(analysis):
                     MoveAnalysis.objects.create(
@@ -67,7 +66,6 @@ class AnalyzePGNView(APIView):
                         opening_name=move_data['op'],
                         classification=move_data['class']
                     )
-                    print(move_data)
                 # Paginate using a QuerySet instead of a list
                 paginator = self.pagination_class()
                 queryset = MoveAnalysis.objects.all().order_by(

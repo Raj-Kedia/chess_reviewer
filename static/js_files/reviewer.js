@@ -15,6 +15,7 @@ const playerBlack = document.getElementById("0-username");
 playerBlack.innerHTML = '';
 playerWhite.innerHTML = '';
 const loaderOverlay = document.getElementById("loader-overlay");
+let total_moves = 0;
 
 function showPGNStatus() {
     const pgnStatus = document.getElementById("pgnStatus");
@@ -42,9 +43,9 @@ function extractCursor(url) {
     return params.get('cursor');
 }
 function analyzeGame(firstRequest = false) {
-    if (!nextPageUrl) return; // Stop if no more pages to fetch
+    if (!nextPageUrl) { return; } // Stop if no more pages to fetch
 
-    console.log("Fetching:", nextPageUrl, "Cursor:", cursor, depthValue);
+    // console.log("Fetching:", nextPageUrl, "Cursor:", cursor, depthValue);
     if (!firstRequest) {
         cursor = extractCursor(nextPageUrl); // Extract cursor for pagination
     }
@@ -66,9 +67,9 @@ function analyzeGame(firstRequest = false) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log("Server Response:", data);
+            // console.log("Server Response:", data);
             if (!data || !data.results) {
-                console.log(data.error);
+                // console.log(data.error);
                 alert(data.error);
                 loaderOverlay.style.display = 'none';
                 document.body.classList.remove('loading');
@@ -81,10 +82,10 @@ function analyzeGame(firstRequest = false) {
             }
 
             if (data.results.result) {
+                total_moves = data.results.result.total_moves;
                 displayGameSummary(data.results.result);
             }
             displayAnalysis(data.results.analysis);
-
             // Update nextPageUrl and cursor for the next request
             nextPageUrl = data.next || null;
 
@@ -93,7 +94,7 @@ function analyzeGame(firstRequest = false) {
             }
         })
         .catch(error => {
-            alert("Error in analyzing game:", error);
+            alert("Error in analyzing game:" + error);
 
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
@@ -184,6 +185,7 @@ const icons = {
     "Miss": "miss.svg",
     "Blunder": "blunder.svg"
 };
+
 function getIcon(classification) {
 
     const fileName = icons[classification];
@@ -198,6 +200,8 @@ let best_move_position = [];
 let opening_names = []; // Store opening names corresponding to each move index
 let move_arr = []
 let classification_arr = [];
+
+
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('moveDetails');
     if (!outputDiv) {
@@ -243,7 +247,7 @@ function displayAnalysis(analysisData) {
             }
         }
 
-        console.log("Processing move:", move.move);
+        // console.log("Processing move:", move.move);
 
 
         // **Process actual move**
@@ -270,53 +274,50 @@ function displayAnalysis(analysisData) {
         game.move(move.move);
         move_arr.push(move.move)
         classification_arr.push(move.classification);// Undo actual move separately
-        console.log(move_arr)
+        // console.log(move_arr)
     });
-
-    console.log("Position array updated", positions);
-    setupMoveHistoryNavigation(positions, best_move_position);
-    // Delay updating board to ensure positions is fully populated
-    setTimeout(() => {
-        updateBoardToLastMove();
-    }, 100);
+    if (move_arr.length >= total_moves) {
+        // console.log("Position array updated", positions);
+        setupMoveHistoryNavigation(positions, best_move_position);
+        // Delay updating board to ensure positions is fully populated
+        setTimeout(() => {
+            updateBoardToLastMove();
+        }, 100);
+    }
 }
 
 function updateBoardToLastMove() {
+    console.log('updateBoardtoLastMove')
     if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
         playSound(move_arr[move_arr.length - 1]);
-        addClassificationIcon(move_arr[move_arr.length - 1], classification_arr[classification_arr.length - 1])
         highlightCurrentMove(positions.length - 1);
         updateOpeningDisplay(positions.length - 1);
+        addClassificationIcon(move_arr.length - 1, move_arr[move_arr.length - 1], classification_arr[classification_arr.length - 1])
 
     }
 }
 
 function setupMoveHistoryNavigation(positions, best_move_position) {
     const moveEntries = document.querySelectorAll("#analysis-body tr");
-    console.log("inside of setupmovehistorynavigation")
-    let idx = 0;
+
     moveEntries.forEach((entry, index) => {
         entry.querySelectorAll("td").forEach((cell, turn) => {
             cell.addEventListener("click", function () {
-                console.log(turn)
-                if (turn === 1) idx = 2 * index;
-                else if (turn === 2) idx = 2 * index + 1;
+                console.log('clicked')
+                let idx = turn === 1 ? 2 * index : 2 * index + 1;
                 if (positions[idx] && positions[idx] !== null) {
-                    board.position(positions[idx]); // Update the same board instance
-                    playSound(move_arr[idx]); // Play move sound
-                    addClassificationIcon(move_arr[idx], classification_arr[idx]);
+                    board.position(positions[idx]);
+                    playSound(move_arr[idx]);
+
                     if (best_move_position[idx] && best_move_position[idx].length === 2) {
-                        console.log("Drawing best move arrow:", best_move_position[idx]);
-                        showSuggestedMove(...best_move_position[idx]); // Draw arrow
+                        showSuggestedMove(...best_move_position[idx]);
                     } else {
-                        console.log("No best move found for index:", idx);
                         clearArrowCanvas();
                     }
-                    console.log(positions[idx], turn)
-                    console.log(best_move_position[idx], turn)
                     highlightCurrentMove(index, turn);
                     updateOpeningDisplay(idx);
+                    addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
                 }
             });
         });
@@ -336,7 +337,7 @@ function highlightCurrentMove(index, turn) {
     if (moveEntries[index]) {
         const moveCells = moveEntries[index].querySelectorAll("td");
         currentMoveIndex = 2 * index + (turn - 1);
-        console.log(currentMoveIndex)
+        // console.log(currentMoveIndex)
         if (moveCells[turn]) {
             moveCells[turn].classList.add("highlighted-move");
         }
@@ -430,7 +431,7 @@ if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
 
 function playSound(sanMove) {
     let soundFile = "move.mp3"; // Default sound
-    console.log(sanMove);
+    // console.log(sanMove);
     if (sanMove.includes("#")) {
         soundFile = "game_end.mp3"; // Stalemate or Checkmate
     } else if (sanMove.includes("+")) {
@@ -451,11 +452,21 @@ function playSound(sanMove) {
     sound.play();
 }
 
-function getDestinationSquare(move) {
-    // Regex to extract the last two characters representing the square
-    let match = move.match(/[a-h][1-8]$/);
-    return match ? match[0] : null;
+function getDestinationSquare(idx, move) {
+    let isWhiteTurn = false;
+    if ((idx & 1) === 0) isWhiteTurn = true;
+    // Handle castling moves based on turn
+    console.log(isWhiteTurn, idx);
+    if (move === "O-O") return isWhiteTurn ? "g1" : "g8";  // Kingside castle
+    if (move === "O-O-O") return isWhiteTurn ? "c1" : "c8"; // Queenside castle
+
+    // Extract the destination square from move notation
+    let match = move.match(/[a-h][1-8](?=[+#]?)/);  // Find a valid square at the end
+    console.log("sqaure matched:" + match);
+    return match ? match[0] : null; // Remove special characters
 }
+
+
 // Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
@@ -529,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let temp = playerWhite.innerHTML;
         playerWhite.innerHTML = playerBlack.innerHTML;
         playerBlack.innerHTML = temp;
-        console.log(playerBlack.innerHTML);
+        // console.log(playerBlack.innerHTML);
 
     });
 
@@ -537,22 +548,22 @@ document.addEventListener("DOMContentLoaded", function () {
         idx = 0
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
-        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            console.log("Drawing best move arrow:", best_move_position[idx]);
+            // console.log("Drawing best move arrow:", best_move_position[idx]);
             showSuggestedMove(...best_move_position[idx]); // Draw arrow
         } else {
-            console.log("No best move found for index:", idx);
+            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        console.log(positions[idx], turn)
-        console.log(best_move_position[idx], turn)
-        console.log(index, turn)
+        // console.log(positions[idx], turn)
+        // console.log(best_move_position[idx], turn)
+        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
+        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
     });
 
     document.getElementById("undoMove").addEventListener("click", function () {
@@ -562,22 +573,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
-        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            console.log("Drawing best move arrow:", best_move_position[idx]);
+            // console.log("Drawing best move arrow:", best_move_position[idx]);
             showSuggestedMove(...best_move_position[idx]); // Draw arrow
         } else {
-            console.log("No best move found for index:", idx);
+            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        console.log(positions[idx], turn)
-        console.log(best_move_position[idx], turn)
-        console.log(index, turn)
+        // console.log(positions[idx], turn)
+        // console.log(best_move_position[idx], turn)
+        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
+        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
     });
 
     document.getElementById("redoMove").addEventListener("click", function () {
@@ -587,44 +598,91 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
-        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            console.log("Drawing best move arrow:", best_move_position[idx]);
+            // console.log("Drawing best move arrow:", best_move_position[idx]);
             showSuggestedMove(...best_move_position[idx]); // Draw arrow
         } else {
-            console.log("No best move found for index:", idx);
+            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        console.log(positions[idx], turn)
-        console.log(best_move_position[idx], turn)
-        console.log(index, turn)
+        // console.log(positions[idx], turn)
+        // console.log(best_move_position[idx], turn)
+        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
+        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
     });
 
     document.getElementById("endPosition").addEventListener("click", function () {
         idx = positions.length - 1
         board.position(positions[idx]); // Update the same board instance
         playSound(move_arr[idx]); // Play move sound
-        addClassificationIcon(move_arr[idx], classification_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            console.log("Drawing best move arrow:", best_move_position[idx]);
+            // console.log("Drawing best move arrow:", best_move_position[idx]);
             showSuggestedMove(...best_move_position[idx]); // Draw arrow
         } else {
-            console.log("No best move found for index:", idx);
+            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        console.log(positions[idx], turn)
-        console.log(best_move_position[idx], turn)
-        console.log(index, turn)
+        // console.log(positions[idx], turn)
+        // console.log(best_move_position[idx], turn)
+        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
+        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
     });
 
+    window.addClassificationIcon = function (idx, move, classification) {
+        let square = getDestinationSquare(idx, move);
+
+        // Remove previous classification icons
+        document.querySelectorAll(".classification-icon").forEach(icon => icon.remove());
+        console.log(square)
+        if (!square) return;
+
+        let board = document.getElementById("board");
+        let pieceSquare = board.querySelector(`.square-${square}`);
+        console.log(pieceSquare);
+        if (!pieceSquare) return;
+
+        // Wait for the board update to complete
+        setTimeout(() => {
+            let piece = pieceSquare.querySelector("img");
+
+            if (!piece) {
+                console.log(`Piece not found on ${square}. Retrying...`);
+                setTimeout(() => window.addClassificationIcon(idx, move, classification), 50);
+                return;
+            }
+
+            // Wrap the piece in a div (if not already wrapped)
+            let wrapper = pieceSquare.querySelector(".classification-wrapper");
+            if (!wrapper) {
+                wrapper = document.createElement("div");
+                wrapper.classList.add("classification-wrapper");
+                pieceSquare.appendChild(wrapper);
+                wrapper.appendChild(piece);
+            }
+
+            // Create the icon element
+            let fileName = icons[classification];
+
+            let icon = document.createElement("img");
+            icon.classList.add("classification-icon");
+            icon.src = `/static/media/${fileName}`;
+            icon.alt = classification;
+            console.log(icon);
+            // Append the icon inside the wrapper
+            wrapper.appendChild(icon);
+            // console.log(move, classification, square);
+        }, 100); // Small delay to ensure DOM update
+
+        // Create the icon element properly
+    };
 });

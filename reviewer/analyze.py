@@ -31,28 +31,22 @@ def analyze_pgn(moves, metadata, depthValue):
         for key, value in metadata.items():
             if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
                 results[key] = value
-        print(moves)
         board.reset()
         for move in moves:
             try:
                 best_move = engine.play(
                     board, chess.engine.Limit(depth=depthValue)).move
                 best = board.san(best_move)
-                print(type(best), type(best_move))
 
                 board.push_san(move)
             except ValueError:
                 raise ValueError(f"Invalid move: {move}")
 
-            print("best move calcualated")
             eval_score = evaluate_position(board, depthValue)
             eval_loss = prev_eval - eval_score
-            print('postion evaluated')
             curr_fen = board.fen()
             move_color = curr_fen.split()[1]
             curr_opening = get_opening_name(curr_fen.split()[0])
-            print("opening name done")
-            print(opening_name, curr_opening)
             if curr_opening:
                 opening_name = curr_opening
                 classification = classifications['book']
@@ -61,12 +55,6 @@ def analyze_pgn(moves, metadata, depthValue):
                 classification = classify_move(
                     eval_loss, best_move, board.peek(), eval_score, prev_move_class, depthValue)
             prev_move_class = classification
-            print("classification is also done")
-            print(move_color)
-            print(classification)
-            print(classfication_index[classification])
-            print(White_arr[classfication_index[classification]])
-            print(Black_arr[classfication_index[classification]])
             if move_color == 'w':
                 White_arr[classfication_index[classification]] += 1
             else:
@@ -79,7 +67,6 @@ def analyze_pgn(moves, metadata, depthValue):
                 "op": opening_name
             })
             prev_eval = eval_score
-        print("completed analysis per move")
         total_moves = len(moves)
         white_accuracy = (total_moves-(White_arr[-2] + White_arr[-3] +
                           White_arr[-4] + White_arr[-5])) / total_moves * 100
@@ -89,9 +76,8 @@ def analyze_pgn(moves, metadata, depthValue):
         results["black_accuracy"] = round(black_accuracy, 2)
         results["black_arr"] = Black_arr
         results["white_arr"] = White_arr
+        results['total_moves'] = total_moves
 
-        print(results)
-        print(analysis)
         return analysis, results
     except Exception as e:
         raise ValueError(f"Something went wrong: {e}")

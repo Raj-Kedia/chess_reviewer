@@ -267,3 +267,8 @@ body.loading {
     pointer-events: none;
     /* Disable clicks */
 }
+
+.classification-icon {
+    width: 20px;
+    height: 20px;
+}
