@@ -16,16 +16,45 @@ playerBlack.innerHTML = '';
 playerWhite.innerHTML = '';
 const loaderOverlay = document.getElementById("loader-overlay");
 let total_moves = 0;
+// Global arrays for storing positions and best move positions
+let positions = [];
+let best_move_position = [];
+let opening_names = []; // Store opening names corresponding to each move index
+let move_arr = []
+let classification_arr = [];
 
-function showPGNStatus() {
-    const pgnStatus = document.getElementById("pgnStatus");
-    pgnStatus.style.display = "block"; // Show alert
 
+function showAlert(message, type = "primary") {
+    let existingAlert = document.getElementById("floatingAlert");
+    if (existingAlert) {
+        existingAlert.remove(); // Remove existing alert before adding a new one
+    }
+
+    let alertDiv = document.createElement("div");
+    alertDiv.id = "floatingAlert";
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute("role", "alert");
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Apply styles for top-right floating alert
+    alertDiv.style.position = "fixed";
+    alertDiv.style.top = "20px";
+    alertDiv.style.right = "20px";
+    alertDiv.style.width = "25%"; // 1/4th of screen width
+    alertDiv.style.zIndex = "1050"; // Ensure it appears above other elements
+    alertDiv.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-dismiss after 5 seconds
     setTimeout(() => {
-        pgnStatus.style.display = "none"; // Hide after 5 seconds
+        alertDiv.classList.remove("show"); // Hide alert
+        setTimeout(() => alertDiv.remove(), 500); // Remove after transition
     }, 5000);
 }
-showPGNStatus();
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
     depthValue = this.value;
@@ -55,7 +84,6 @@ function analyzeGame(firstRequest = false) {
         : { cursor: cursor }; // Only send cursor in subsequent requests
 
     if (firstRequest) {
-
         loaderOverlay.style.display = "flex";
         document.body.classList.add("loading");
     }
@@ -70,7 +98,7 @@ function analyzeGame(firstRequest = false) {
             // console.log("Server Response:", data);
             if (!data || !data.results) {
                 // console.log(data.error);
-                alert(data.error);
+                showAlert(data.error, "danger");
                 loaderOverlay.style.display = 'none';
                 document.body.classList.remove('loading');
                 return;
@@ -94,7 +122,7 @@ function analyzeGame(firstRequest = false) {
             }
         })
         .catch(error => {
-            alert("Error in analyzing game:" + error);
+            showAlert("Error in analyzing game:" + error, 'danger');
 
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
@@ -193,13 +221,6 @@ function getIcon(classification) {
 
     return `<img src="/static/media/${fileName}" alt="${classification}" class="move-icon" width='30px' height='30px'>`;
 }
-
-// Global arrays for storing positions and best move positions
-let positions = [];
-let best_move_position = [];
-let opening_names = []; // Store opening names corresponding to each move index
-let move_arr = []
-let classification_arr = [];
 
 
 function displayAnalysis(analysisData) {
@@ -481,8 +502,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (!pgnData) {
-        document.getElementById("pgnStatus").classList.replace("alert-success", "alert-danger");
-        document.getElementById("pgnStatus").innerText = "No PGN found!";
+        showAlert("No PGN provided", 'warning');
+    }
+    else {
+        showAlert("PGN prased successfully", 'success');
     }
 
     function handleMove(source, target) {
@@ -685,4 +708,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Create the icon element properly
     };
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {  // Detect if coming from bfcache (back-forward cache)
+            localStorage.removeItem("pgnData");
+        }
+    });
+
 });

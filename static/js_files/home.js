@@ -5,6 +5,39 @@ let selectedGameIndex = -1;
 let gameData = [];
 const confirmSelection = document.getElementById("confirmSelection");
 
+function showAlert(message, type = "primary") {
+    let existingAlert = document.getElementById("floatingAlert");
+    if (existingAlert) {
+        existingAlert.remove(); // Remove existing alert before adding a new one
+    }
+
+    let alertDiv = document.createElement("div");
+    alertDiv.id = "floatingAlert";
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute("role", "alert");
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Apply styles for top-right floating alert
+    alertDiv.style.position = "fixed";
+    alertDiv.style.top = "20px";
+    alertDiv.style.right = "20px";
+    alertDiv.style.width = "25%"; // 1/4th of screen width
+    alertDiv.style.zIndex = "1050"; // Ensure it appears above other elements
+    alertDiv.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.classList.remove("show"); // Hide alert
+        setTimeout(() => alertDiv.remove(), 500); // Remove after transition
+    }, 5000);
+}
+
+
 function updatePlaceholder(option) {
     selectedPlatform = option;
     let placeholderText = {
@@ -37,7 +70,7 @@ let cursor = null;
 async function fetchGame(firstRequest = true) {
     let username = document.getElementById("inputField").value.trim();
     if (!username) {
-        alert("Please enter a username.");
+        showAlert("Please enter your username", '"danger"');
         return;
     }
 
@@ -66,7 +99,7 @@ async function fetchGame(firstRequest = true) {
 
         if (!data || !data.results) {
             if (!data || !data.results) {
-                alert("Invalid response from server: " + data.error);
+                showAlert("Invalid response from server: " + data.error, "danger");
             }
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
@@ -81,7 +114,7 @@ async function fetchGame(firstRequest = true) {
             // console.log("Updated cursor:", cursor);
         }
     } catch (error) {
-        alert("Error fetching games: " + error);
+        showAlert("Error fetching games: " + error, "danger");
         loaderOverlay.style.display = "none";
         document.body.classList.remove("loading");
     }
@@ -299,7 +332,7 @@ function confirmGameSelection() {
 function parsePGN() {
     if (selectedPlatform === "Lichess.org" || selectedPlatform === "Chess.com") {
         if (!selectedPGN) {
-            alert("No PGN provided!");
+            showAlert("No PGN provided!", "danger");
             return;
         }
         localStorage.setItem("pgnData", selectedPGN);
@@ -308,7 +341,7 @@ function parsePGN() {
     } else if (selectedPlatform === "PGN") {
         selectedPGN = document.getElementById("inputField").value.trim();
         if (!selectedPGN) {
-            alert("No PGN provided");
+            showAlert("No PGN provided", "danger");
             return;
         }
         if (!checkPGNJSON(selectedPGN)) return;
@@ -318,7 +351,7 @@ function parsePGN() {
     } else {
         let json_data = document.getElementById("inputField").value.trim();
         if (!json_data) {
-            alert("No JSON provided");
+            showAlert("No JSON provided", "danger");
             return;
         }
         if (!checkPGNJSON(json_data)) return;
@@ -332,9 +365,9 @@ function checkPGNJSON(data) {
     let isJSON = data.startsWith("{") || data.startsWith("[");
 
     if (selectedPlatform === "PGN") {
-        if (!isPGN) { alert("Invalid PGN"); return false; }
+        if (!isPGN) { showAlert("Invalid PGN", "danger"); return false; }
     } else {
-        if (!isJSON) { alert("Invalid JSON"); return false; }
+        if (!isJSON) { showAlert("Invalid JSON", "danger"); return false; }
     }
     return true;
 }

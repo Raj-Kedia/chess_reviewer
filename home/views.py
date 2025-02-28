@@ -31,7 +31,6 @@ class FetchGameView(APIView):
             platform = data.get('platform', '').strip()
             # Cursor represents the last fetched game's timestamp
             cursor = int(data.get('cursor', 0))
-            print(data, cursor)
             if not username or platform not in ["Chess.com", "Lichess.org"]:
                 return Response({"error": "Invalid username or platform"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -46,12 +45,12 @@ class FetchGameView(APIView):
                 # Fetch archives (list of URLs for each month's games)
                 archive_response = requests.get(archive_url, headers=headers)
                 if archive_response.status_code != 200:
-                    return Response({"error": "Chess.com API issue or private games."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid username or private username."}, status=status.HTTP_400_BAD_REQUEST)
 
                 archive_data = archive_response.json()
                 archives = archive_data.get("archives", [])
                 if not archives:
-                    return Response({"error": "No game archives found."}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({"error": "No game found."}, status=status.HTTP_404_NOT_FOUND)
 
                 # Start from the most recent archive and work backward
                 # Process from latest to oldest archive
@@ -70,10 +69,8 @@ class FetchGameView(APIView):
 
                     for game in games_data:
                         end_time = int(game.get("end_time", 0))
-                        print(end_time, cursor)
                         # Skip games already fetched
                         if cursor and end_time >= cursor:
-                            print(cursor, end_time)
                             continue
 
                         game_list.append(game)
@@ -109,12 +106,10 @@ class FetchGameView(APIView):
                 try:
                     games_data = [json.loads(
                         line) for line in response.text.strip().split("\n")]
+                    if len(games_data) == 0:
+                        return Response({"error": "No game found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 except ValueError:
                     return Response({"error": "Invalid JSON response from Lichess.org"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                # Print fetched game timestamps for debugging
-                print("Fetched games timestamps:", [
-                      game.get("createdAt", 0) for game in games_data])
 
                 # Reverse order to get the most recent games first
                 games_data.sort(key=lambda x: int(
@@ -126,9 +121,7 @@ class FetchGameView(APIView):
                 # Ensure cursor updates to the **oldest** game's timestamp
                 if game_list:
                     new_cursor = game_list[-1].get("createdAt", 0)
-                    print("New cursor (oldest game's timestamp):", new_cursor)
 
-            print(len(game_list))
             return Response({
                 "results": game_list,
                 "next_cursor": new_cursor
