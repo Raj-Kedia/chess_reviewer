@@ -25,10 +25,10 @@ function updatePlaceholder(option) {
 
     if (selectedPlatform === "Chess.com" || selectedPlatform === "Lichess.org") {
         fetchButton.classList.remove("d-none");
-        console.log("Fetch button is now visible.");
+        // console.log("Fetch button is now visible.");
     } else {
         fetchButton.classList.add("d-none");
-        console.log("Fetch button is now hidden.");
+        // console.log("Fetch button is now hidden.");
     }
     document.getElementById("dropdownMenuButton").innerHTML = `${selectedPlatform}`
 }
@@ -46,7 +46,7 @@ async function fetchGame(firstRequest = true) {
     // Show loader and disable background interaction
     loaderOverlay.style.display = "flex";
     document.body.classList.add("loading");
-    console.log(loaderOverlay.style.display);
+    // console.log(loaderOverlay.style.display);
     if (!nextPageUrl) return;  // Stop if no more pages to fetch
 
     const requestData = firstRequest
@@ -61,12 +61,12 @@ async function fetchGame(firstRequest = true) {
         });
 
         let data = await response.json();
-        console.log("Server Response:", data);
+        // console.log("Server Response:", data);
 
 
         if (!data || !data.results) {
             if (!data || !data.results) {
-                alert("Invalid response from server: ", data.error);
+                alert("Invalid response from server: " + data.error);
             }
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
@@ -78,7 +78,7 @@ async function fetchGame(firstRequest = true) {
 
         if (data.next_cursor) {
             cursor = data.next_cursor;
-            console.log("Updated cursor:", cursor);
+            // console.log("Updated cursor:", cursor);
         }
     } catch (error) {
         alert("Error fetching games: " + error);
@@ -86,7 +86,7 @@ async function fetchGame(firstRequest = true) {
         document.body.classList.remove("loading");
     }
     setTimeout(() => {
-        console.log("Game Data Fetched!");
+        // console.log("Game Data Fetched!");
 
         // Hide loader and re-enable background interaction
         loaderOverlay.style.display = "none";
@@ -108,7 +108,7 @@ function displayGames(newGames) {
         return;
     }
 
-    console.log(newGames);
+    // console.log(newGames);
     let startIndex = gameList.children.length; // Get current length before adding
 
     newGames.forEach((game, index) => {
@@ -186,8 +186,20 @@ function displayGames(newGames) {
         return;
     }
 
-    let gameModal = new bootstrap.Modal(gameModalElement);
-    gameModal.show();
+    // ✅ Check if modal is already visible before showing it
+    if (!gameModalElement.classList.contains("show")) {
+        let gameModal = new bootstrap.Modal(gameModalElement);
+        gameModalElement.addEventListener("shown.bs.modal", function () {
+            let confirmBtn = document.getElementById("confirmSelection");
+            if (confirmBtn) confirmBtn.focus();
+
+            // ✅ Ensure aria-hidden is removed when modal is shown
+            gameModalElement.removeAttribute("aria-hidden");
+        });
+        gameModal.show();
+    } else {
+        // console.log("Modal is already shown, skipping show()");
+    }
 }
 
 function selectGame(index) {
@@ -197,7 +209,7 @@ function selectGame(index) {
 
 function confirmGameSelection() {
     let game = gameData[selectedGameIndex];
-    console.log(gameData[selectedGameIndex])
+    // console.log(gameData[selectedGameIndex])
     selectedPGN = game.pgn;
     if (selectedPlatform === 'Chess.com') {
         let endTime = game.end_time;  // Unix timestamp from the game data
@@ -236,9 +248,9 @@ function confirmGameSelection() {
             }
         }
         else if (game.source === "friend") {
-            console.log(game.source, game.players);
-            console.log(game.players.black);
-            console.log(game.players.white);
+            // console.log(game.source, game.players);
+            // console.log(game.players.black);
+            // console.log(game.players.white);
             if (game.players?.black?.user?.id) {
                 blackPlayer = game.players.black.user.id;
                 whitePlayer = 'Friend';
@@ -259,8 +271,29 @@ function confirmGameSelection() {
     document.getElementById("selectedGameContainer").style.display = "block";
 
     let gameModalElement = document.getElementById("gameModal");
+
+    if (!gameModalElement) {
+        console.error("gameModal element not found!");
+        return;
+    }
+
     let gameModal = bootstrap.Modal.getInstance(gameModalElement);
-    gameModal.hide();
+
+    if (gameModal) {
+        gameModalElement.addEventListener("hidden.bs.modal", function () {
+            // ✅ Ensure no element inside modal retains focus
+            document.activeElement?.blur();
+
+            // ✅ Restore focus to the button that triggered the modal
+            let triggerButton = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#gameModal"]');
+            if (triggerButton) triggerButton.focus();
+
+            // ✅ Restore aria-hidden attribute
+            gameModalElement.setAttribute("aria-hidden", "true");
+        });
+
+        gameModal.hide();
+    }
 }
 
 function parsePGN() {
@@ -310,15 +343,17 @@ function checkPGNJSON(data) {
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("gameModal");
 
-    modal.addEventListener("show.bs.modal", function () {
-        modal.removeAttribute("aria-hidden"); // Make it visible for assistive tech
-        modal.style.pointerEvents = "auto"; // Enable interactions
-        modal.style.overflow = "auto"; // Enable scrolling
-    });
+    // modal.addEventListener("show.bs.modal", function () {
+    //     modal.removeAttribute("aria-hidden"); // Make it visible for assistive tech
+    //     modal.style.pointerEvents = "auto"; // Enable interactions
+    //     modal.style.overflow = "auto"; // Enable scrolling
+    // });
 
     modal.addEventListener("hidden.bs.modal", function () {
-        modal.setAttribute("aria-hidden", "true"); // Hide when fully closed
-        modal.style.pointerEvents = "none"; // Prevent interactions
-        modal.style.overflow = "hidden"; // Prevent unwanted scrolling when hidden
+        // modal.setAttribute("aria-hidden", "true"); // Hide when fully closed
+        // modal.style.pointerEvents = "none"; // Prevent interactions
+        // modal.style.overflow = "hidden"; // Prevent unwanted scrolling when hidden
+        gameList.innerHTML = '';
+        confirmSelection.classList.add('d-none');
     });
 });

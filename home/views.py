@@ -104,7 +104,7 @@ class FetchGameView(APIView):
                     lichess_url, headers=headers, params=params)
 
                 if response.status_code != 200:
-                    return Response({"error": "Lichess API issue or private games."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid username or private username."}, status=status.HTTP_400_BAD_REQUEST)
 
                 try:
                     games_data = [json.loads(
