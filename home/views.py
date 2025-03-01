@@ -6,6 +6,11 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import json
+from .models import *
+import re
+from django.http import JsonResponse
+import os
+from django.contrib import messages
 
 
 def index(request):
@@ -13,7 +18,20 @@ def index(request):
 
 
 def contact(request):
-    return render(request, 'home/contact.html')
+    if request.method == "POST":
+        name = request.POST['name']
+        email = request.POST['email']
+        phone = request.POST['phone']
+        content = request.POST['content']
+        if len(name) < 2 or len(email) < 3 or len(phone) < 10 or len(content) < 4:
+            messages.error(request, "Please fill the form correctly")
+        else:
+            contact = Contact(name=name, email=email,
+                              phone=phone, content=content)
+            contact.save()
+            messages.success(
+                request, "Your message has been successfully sent")
+    return render(request, "home/contact.html")
 
 
 def about(request):
@@ -29,20 +47,18 @@ class FetchGameView(APIView):
             data = request.data
             username = data.get('username', '').strip()
             platform = data.get('platform', '').strip()
-            # Cursor represents the last fetched game's timestamp
             cursor = int(data.get('cursor', 0))
             if not username or platform not in ["Chess.com", "Lichess.org"]:
                 return Response({"error": "Invalid username or platform"}, status=status.HTTP_400_BAD_REQUEST)
-
+            print('till now no error')
             game_list = []
-            new_cursor = None  # This will store the next page cursor
+            new_cursor = None
 
             headers = {"User-Agent": "Mozilla/5.0"}
 
             if platform == "Chess.com":
                 archive_url = f"https://api.chess.com/pub/player/{username}/games/archives"
 
-                # Fetch archives (list of URLs for each month's games)
                 archive_response = requests.get(archive_url, headers=headers)
                 if archive_response.status_code != 200:
                     return Response({"error": "Invalid username or private username."}, status=status.HTTP_400_BAD_REQUEST)
@@ -52,30 +68,26 @@ class FetchGameView(APIView):
                 if not archives:
                     return Response({"error": "No game found."}, status=status.HTTP_404_NOT_FOUND)
 
-                # Start from the most recent archive and work backward
-                # Process from latest to oldest archive
                 for archive in reversed(archives):
                     if len(game_list) >= 20:
-                        break  # Stop once we collect 20 games
+                        break
 
                     games_response = requests.get(archive, headers=headers)
                     if games_response.status_code != 200:
-                        continue  # Skip if the archive fails
+                        continue
 
                     games_data = games_response.json().get("games", [])
-                    # Sort by latest first
                     games_data.sort(key=lambda x: int(
                         x.get("end_time", 0)), reverse=True)
 
                     for game in games_data:
                         end_time = int(game.get("end_time", 0))
-                        # Skip games already fetched
                         if cursor and end_time >= cursor:
                             continue
 
                         game_list.append(game)
                         if len(game_list) == 20:
-                            new_cursor = end_time  # Update cursor to the last game's timestamp
+                            new_cursor = end_time
                             break
 
                 if not new_cursor and game_list:
@@ -85,14 +97,13 @@ class FetchGameView(APIView):
                 game_list.clear()
                 lichess_url = f"https://lichess.org/api/games/user/{username}"
                 params = {
-                    "max": 20,  # Limit to 20 games per request
+                    "max": 20,
                     "moves": True,
                     "pgnInJson": True,
                     "analysed": False,
                 }
 
                 if cursor:
-                    # Fetch games before this timestamp
                     params["until"] = cursor
 
                 headers = {"Accept": "application/json",
@@ -111,14 +122,12 @@ class FetchGameView(APIView):
                 except ValueError:
                     return Response({"error": "Invalid JSON response from Lichess.org"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                # Reverse order to get the most recent games first
                 games_data.sort(key=lambda x: int(
                     x.get("createdAt", 0)), reverse=True)
 
                 for game in games_data:
                     game_list.append(game)
 
-                # Ensure cursor updates to the **oldest** game's timestamp
                 if game_list:
                     new_cursor = game_list[-1].get("createdAt", 0)
 

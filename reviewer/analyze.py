@@ -41,19 +41,21 @@ def analyze_pgn(moves, metadata, depthValue):
                 board.push_san(move)
             except ValueError:
                 raise ValueError(f"Invalid move: {move}")
-
             eval_score = evaluate_position(board, depthValue)
             eval_loss = prev_eval - eval_score
             curr_fen = board.fen()
             move_color = curr_fen.split()[1]
             curr_opening = get_opening_name(curr_fen.split()[0])
+            played_move = board.peek()
+            board.pop()
             if curr_opening:
                 opening_name = curr_opening
                 classification = classifications['book']
             else:
                 opening_name = 'unknown' if not opening_name else opening_name
                 classification = classify_move(
-                    eval_loss, best_move, board.peek(), eval_score, prev_move_class, depthValue)
+                    eval_loss, best_move, played_move, eval_score, prev_move_class, depthValue)
+            board.push_san(move)
             prev_move_class = classification
             if move_color == 'w':
                 White_arr[classfication_index[classification]] += 1
@@ -77,7 +79,6 @@ def analyze_pgn(moves, metadata, depthValue):
         results["black_arr"] = Black_arr
         results["white_arr"] = White_arr
         results['total_moves'] = total_moves
-
         return analysis, results
     except Exception as e:
         raise ValueError(f"Something went wrong: {e}")

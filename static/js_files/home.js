@@ -8,7 +8,7 @@ const confirmSelection = document.getElementById("confirmSelection");
 function showAlert(message, type = "primary") {
     let existingAlert = document.getElementById("floatingAlert");
     if (existingAlert) {
-        existingAlert.remove(); // Remove existing alert before adding a new one
+        existingAlert.remove();
     }
 
     let alertDiv = document.createElement("div");
@@ -20,20 +20,18 @@ function showAlert(message, type = "primary") {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    // Apply styles for top-right floating alert
     alertDiv.style.position = "fixed";
     alertDiv.style.top = "20px";
     alertDiv.style.right = "20px";
-    alertDiv.style.width = "25%"; // 1/4th of screen width
-    alertDiv.style.zIndex = "1050"; // Ensure it appears above other elements
+    alertDiv.style.width = "25%";
+    alertDiv.style.zIndex = "1050";
     alertDiv.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
 
     document.body.appendChild(alertDiv);
 
-    // Auto-dismiss after 5 seconds
     setTimeout(() => {
-        alertDiv.classList.remove("show"); // Hide alert
-        setTimeout(() => alertDiv.remove(), 500); // Remove after transition
+        alertDiv.classList.remove("show");
+        setTimeout(() => alertDiv.remove(), 500);
     }, 5000);
 }
 
@@ -51,20 +49,24 @@ function updatePlaceholder(option) {
     let fetchButton = document.getElementById("fetchButton");
 
     if (!fetchButton) {
-        console.error("Fetch button not found in the DOM!");
         return;
     }
     inputField.placeholder = placeholderText[option] || "Enter value";
 
     if (selectedPlatform === "Chess.com" || selectedPlatform === "Lichess.org") {
         fetchButton.classList.remove("d-none");
-        // console.log("Fetch button is now visible.");
     } else {
         fetchButton.classList.add("d-none");
-        // console.log("Fetch button is now hidden.");
     }
     document.getElementById("dropdownMenuButton").innerHTML = `${selectedPlatform}`
 }
+
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
 let nextPageUrl = "./fetch_game/";
 let cursor = null;
 async function fetchGame(firstRequest = true) {
@@ -76,25 +78,25 @@ async function fetchGame(firstRequest = true) {
 
     const loaderOverlay = document.getElementById("loader-overlay");
 
-    // Show loader and disable background interaction
     loaderOverlay.style.display = "flex";
     document.body.classList.add("loading");
-    // console.log(loaderOverlay.style.display);
-    if (!nextPageUrl) return;  // Stop if no more pages to fetch
+    if (!nextPageUrl) return;
 
     const requestData = firstRequest
         ? { username: username, platform: selectedPlatform }
-        : { username: username, platform: selectedPlatform, cursor: cursor };  // Send cursor for pagination
+        : { username: username, platform: selectedPlatform, cursor: cursor };
 
     try {
         let response = await fetch(nextPageUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': getCSRFToken()
+            },
             body: JSON.stringify(requestData),
         });
 
         let data = await response.json();
-        // console.log("Server Response:", data);
 
 
         if (!data || !data.results) {
@@ -105,13 +107,11 @@ async function fetchGame(firstRequest = true) {
             document.body.classList.remove("loading");
             return;
         }
-        gameData = [];
-        gameData.push(...data.results);  // Append new games
-        displayGames(gameData);  // Update the UI
+        gameData.push(...data.results);
+        displayGames(gameData);
 
         if (data.next_cursor) {
             cursor = data.next_cursor;
-            // console.log("Updated cursor:", cursor);
         }
     } catch (error) {
         showAlert("Error fetching games: " + error, "danger");
@@ -119,9 +119,6 @@ async function fetchGame(firstRequest = true) {
         document.body.classList.remove("loading");
     }
     setTimeout(() => {
-        // console.log("Game Data Fetched!");
-
-        // Hide loader and re-enable background interaction
         loaderOverlay.style.display = "none";
         document.body.classList.remove("loading");
     });
@@ -130,7 +127,6 @@ async function fetchGame(firstRequest = true) {
 function displayGames(newGames) {
     let gameList = document.getElementById("gameList");
     if (!gameList) {
-        console.error("gameList element not found!");
         return;
     }
 
@@ -138,100 +134,96 @@ function displayGames(newGames) {
         if (gameList.children.length === 0) {
             gameList.innerHTML = "<li class='list-group-item'>No recent games found.</li>";
         }
+        else {
+            showAlert("No recent games found", 'warning')
+        }
         return;
     }
 
-    // console.log(newGames);
-    let startIndex = gameList.children.length; // Get current length before adding
-
+    let startIndex = gameList.children.length;
     newGames.forEach((game, index) => {
-        let listItem = document.createElement("li");
-        listItem.className = "list-group-item";
-        let actualIndex = startIndex + index;  // Adjust index to prevent overwriting
-        if (selectedPlatform === "Chess.com") {
+        if (index >= startIndex) {
+            let listItem = document.createElement("li");
+            listItem.className = "list-group-item";
+            if (selectedPlatform === "Chess.com") {
 
-            let endTime = game.end_time;
-            let dateObj = new Date(endTime * 1000);
-            let gameDate = dateObj.toISOString().split("T")[0];
-            let gameTime = dateObj.toLocaleTimeString();
-            listItem.innerHTML = `
-            <input type="radio" name="selectedGame" id="game${actualIndex}" value="${actualIndex}" onclick="selectGame(${actualIndex})">
-            <label for="game${actualIndex}">
+                let endTime = game.end_time;
+                let dateObj = new Date(endTime * 1000);
+                let gameDate = dateObj.toISOString().split("T")[0];
+                let gameTime = dateObj.toLocaleTimeString();
+                listItem.innerHTML = `
+            <input type="radio" name="selectedGame" id="game${index}" value="${index}" onclick="selectGame(${index})">
+            <label for="game${index}">
                 <strong>${game.white.username} vs ${game.black.username}</strong><br>
                 <small>${gameDate} ${gameTime}</small>
             </label>
         `;
-        }
-        else if (selectedPlatform === 'Lichess.org') {
-            let endTime = game.createdAt; // Already in milliseconds
-            let dateObj = new Date(endTime); // No need to multiply by 1000
+            }
+            else if (selectedPlatform === 'Lichess.org') {
+                let endTime = game.createdAt;
+                let dateObj = new Date(endTime);
 
-            // Format date properly
-            let gameDate = dateObj.toISOString().split("T")[0]; // YYYY-MM-DD format
-            let gameTime = dateObj.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true, // AM/PM format
-            });
-            let whitePlayer = 'Unknown';
-            let blackPlayer = 'Unknown';
+                let gameDate = dateObj.toISOString().split("T")[0];
+                let gameTime = dateObj.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                });
+                let whitePlayer = 'Unknown';
+                let blackPlayer = 'Unknown';
 
-            if (game.source === 'ai') {
-                if (game.players?.black?.aiLevel) {
-                    blackPlayer = `AI Level ${game.players.black.aiLevel}`;
+                if (game.source === 'ai') {
+                    if (game.players?.black?.aiLevel) {
+                        blackPlayer = `AI Level ${game.players.black.aiLevel}`;
+                        whitePlayer = game.players?.white?.user?.id || "Unknown";
+                    } else if (game.players?.white?.aiLevel) {
+                        whitePlayer = `AI Level ${game.players.white.aiLevel}`;
+                        blackPlayer = game.players?.black?.user?.id || "Unknown";
+                    }
+                }
+                else if (game.source === "friend") {
+                    if (game.players?.black?.user?.id) {
+                        blackPlayer = game.players.black.user.id;
+                        whitePlayer = 'Friend';
+                    } else if (game.players?.white?.user?.id) {
+                        whitePlayer = game.players.white.user.id;
+                        blackPlayer = 'Friend';
+                    }
+                }
+                else {
                     whitePlayer = game.players?.white?.user?.id || "Unknown";
-                } else if (game.players?.white?.aiLevel) {
-                    whitePlayer = `AI Level ${game.players.white.aiLevel}`;
                     blackPlayer = game.players?.black?.user?.id || "Unknown";
                 }
-            }
-            else if (game.source === "friend") {
-                if (game.players?.black?.user?.id) {
-                    blackPlayer = game.players.black.user.id;
-                    whitePlayer = 'Friend';
-                } else if (game.players?.white?.user?.id) {
-                    whitePlayer = game.players.white.user.id;
-                    blackPlayer = 'Friend';
-                }
-            }
-            else {
-                whitePlayer = game.players?.white?.user?.id || "Unknown";
-                blackPlayer = game.players?.black?.user?.id || "Unknown";
-            }
 
-            listItem.innerHTML = `
-                <input type="radio" name="selectedGame" id="game${actualIndex}" value="${actualIndex}" onclick="selectGame(${actualIndex})">
-                <label for="game${actualIndex}">
+                listItem.innerHTML = `
+                <input type="radio" name="selectedGame" id="game${index}" value="${index}" onclick="selectGame(${index})">
+                <label for="game${index}">
                     <strong>${whitePlayer} vs ${blackPlayer}</strong><br>
                     <small>${gameDate} ${gameTime}</small>
                 </label>
             `;
-        }
+            }
 
-        gameList.appendChild(listItem);
+            gameList.appendChild(listItem);
+        }
 
     });
 
     let gameModalElement = document.getElementById("gameModal");
     if (!gameModalElement) {
-        console.error("gameModal element not found!");
         return;
     }
 
-    // ✅ Check if modal is already visible before showing it
     if (!gameModalElement.classList.contains("show")) {
         let gameModal = new bootstrap.Modal(gameModalElement);
         gameModalElement.addEventListener("shown.bs.modal", function () {
             let confirmBtn = document.getElementById("confirmSelection");
             if (confirmBtn) confirmBtn.focus();
 
-            // ✅ Ensure aria-hidden is removed when modal is shown
             gameModalElement.removeAttribute("aria-hidden");
         });
         gameModal.show();
-    } else {
-        // console.log("Modal is already shown, skipping show()");
     }
 }
 
@@ -242,14 +234,12 @@ function selectGame(index) {
 
 function confirmGameSelection() {
     let game = gameData[selectedGameIndex];
-    // console.log(gameData[selectedGameIndex])
     selectedPGN = game.pgn;
     if (selectedPlatform === 'Chess.com') {
-        let endTime = game.end_time;  // Unix timestamp from the game data
-        let dateObj = new Date(endTime * 1000);  // Convert to milliseconds
+        let endTime = game.end_time;
+        let dateObj = new Date(endTime * 1000);
 
-        // Extract date and time
-        let gameDate = dateObj.toISOString().split("T")[0];  // YYYY-MM-DD format
+        let gameDate = dateObj.toISOString().split("T")[0];
         let gameTime = dateObj.toLocaleTimeString();
         document.getElementById(
             "selectedGameText"
@@ -257,16 +247,14 @@ function confirmGameSelection() {
         } <br> <small>${gameDate} ${gameTime}</small>`;
     }
     else if (selectedPlatform === 'Lichess.org') {
-        let endTime = game.createdAt; // Already in milliseconds
-        let dateObj = new Date(endTime); // No need to multiply by 1000
-
-        // Format date properly
-        let gameDate = dateObj.toISOString().split("T")[0]; // YYYY-MM-DD format
+        let endTime = game.createdAt;
+        let dateObj = new Date(endTime);
+        let gameDate = dateObj.toISOString().split("T")[0];
         let gameTime = dateObj.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
-            hour12: true, // AM/PM format
+            hour12: true,
         });
         let whitePlayer = 'Unknown';
         let blackPlayer = 'Unknown';
@@ -281,9 +269,6 @@ function confirmGameSelection() {
             }
         }
         else if (game.source === "friend") {
-            // console.log(game.source, game.players);
-            // console.log(game.players.black);
-            // console.log(game.players.white);
             if (game.players?.black?.user?.id) {
                 blackPlayer = game.players.black.user.id;
                 whitePlayer = 'Friend';
@@ -306,7 +291,6 @@ function confirmGameSelection() {
     let gameModalElement = document.getElementById("gameModal");
 
     if (!gameModalElement) {
-        console.error("gameModal element not found!");
         return;
     }
 
@@ -314,14 +298,11 @@ function confirmGameSelection() {
 
     if (gameModal) {
         gameModalElement.addEventListener("hidden.bs.modal", function () {
-            // ✅ Ensure no element inside modal retains focus
             document.activeElement?.blur();
 
-            // ✅ Restore focus to the button that triggered the modal
             let triggerButton = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#gameModal"]');
             if (triggerButton) triggerButton.focus();
 
-            // ✅ Restore aria-hidden attribute
             gameModalElement.setAttribute("aria-hidden", "true");
         });
 
@@ -376,16 +357,8 @@ function checkPGNJSON(data) {
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("gameModal");
 
-    // modal.addEventListener("show.bs.modal", function () {
-    //     modal.removeAttribute("aria-hidden"); // Make it visible for assistive tech
-    //     modal.style.pointerEvents = "auto"; // Enable interactions
-    //     modal.style.overflow = "auto"; // Enable scrolling
-    // });
 
     modal.addEventListener("hidden.bs.modal", function () {
-        // modal.setAttribute("aria-hidden", "true"); // Hide when fully closed
-        // modal.style.pointerEvents = "none"; // Prevent interactions
-        // modal.style.overflow = "hidden"; // Prevent unwanted scrolling when hidden
         gameList.innerHTML = '';
         confirmSelection.classList.add('d-none');
     });

@@ -1,4 +1,3 @@
-// Global variables and elements
 let pgnData = localStorage.getItem("pgnData");
 const analyzeButton = document.getElementById("analyzebutton");
 const toggleReviewButton = document.getElementById("toggleReview");
@@ -6,8 +5,8 @@ const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
 let depthValue = 20;
-let nextPageUrl = "./analyze_pgn/";  // Initial API endpoint
-let cursor = null;  // Cursor for pagination
+let nextPageUrl = "./analyze_pgn/";
+let cursor = null;
 const game = new Chess();
 let currentMoveIndex = 0;
 const playerWhite = document.getElementById("1-username");
@@ -16,10 +15,10 @@ playerBlack.innerHTML = '';
 playerWhite.innerHTML = '';
 const loaderOverlay = document.getElementById("loader-overlay");
 let total_moves = 0;
-// Global arrays for storing positions and best move positions
+
 let positions = [];
 let best_move_position = [];
-let opening_names = []; // Store opening names corresponding to each move index
+let opening_names = [];
 let move_arr = []
 let classification_arr = [];
 
@@ -27,7 +26,7 @@ let classification_arr = [];
 function showAlert(message, type = "primary") {
     let existingAlert = document.getElementById("floatingAlert");
     if (existingAlert) {
-        existingAlert.remove(); // Remove existing alert before adding a new one
+        existingAlert.remove();
     }
 
     let alertDiv = document.createElement("div");
@@ -39,20 +38,20 @@ function showAlert(message, type = "primary") {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    // Apply styles for top-right floating alert
+
     alertDiv.style.position = "fixed";
     alertDiv.style.top = "20px";
     alertDiv.style.right = "20px";
-    alertDiv.style.width = "25%"; // 1/4th of screen width
-    alertDiv.style.zIndex = "1050"; // Ensure it appears above other elements
+    alertDiv.style.width = "25%";
+    alertDiv.style.zIndex = "1050";
     alertDiv.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
 
     document.body.appendChild(alertDiv);
 
-    // Auto-dismiss after 5 seconds
+
     setTimeout(() => {
-        alertDiv.classList.remove("show"); // Hide alert
-        setTimeout(() => alertDiv.remove(), 500); // Remove after transition
+        alertDiv.classList.remove("show");
+        setTimeout(() => alertDiv.remove(), 500);
     }, 5000);
 }
 document.getElementById("depthSlider").addEventListener("input", function () {
@@ -63,7 +62,7 @@ analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
         analyzeWindow.style.display = 'none';
         resultWindow.style.display = 'block';
-        analyzeGame(true);  // First request with PGN
+        analyzeGame(true);
     }
 });
 
@@ -72,16 +71,15 @@ function extractCursor(url) {
     return params.get('cursor');
 }
 function analyzeGame(firstRequest = false) {
-    if (!nextPageUrl) { return; } // Stop if no more pages to fetch
+    if (!nextPageUrl) { return; }
 
-    // console.log("Fetching:", nextPageUrl, "Cursor:", cursor, depthValue);
     if (!firstRequest) {
-        cursor = extractCursor(nextPageUrl); // Extract cursor for pagination
+        cursor = extractCursor(nextPageUrl);
     }
 
     const requestData = firstRequest
-        ? { pgn: pgnData, depth: depthValue } // Send PGN only in the first request
-        : { cursor: cursor }; // Only send cursor in subsequent requests
+        ? { pgn: pgnData, depth: depthValue }
+        : { cursor: cursor };
 
     if (firstRequest) {
         loaderOverlay.style.display = "flex";
@@ -95,9 +93,7 @@ function analyzeGame(firstRequest = false) {
     })
         .then(response => response.json())
         .then(data => {
-            // console.log("Server Response:", data);
             if (!data || !data.results) {
-                // console.log(data.error);
                 showAlert(data.error, "danger");
                 loaderOverlay.style.display = 'none';
                 document.body.classList.remove('loading');
@@ -114,11 +110,10 @@ function analyzeGame(firstRequest = false) {
                 displayGameSummary(data.results.result);
             }
             displayAnalysis(data.results.analysis);
-            // Update nextPageUrl and cursor for the next request
             nextPageUrl = data.next || null;
 
             if (nextPageUrl) {
-                analyzeGame(); // Call again for the next page
+                analyzeGame();
             }
         })
         .catch(error => {
@@ -137,7 +132,7 @@ function showErrorInGameReviewWindow(errorMessage) {
 
 function displayGameSummary(results) {
     const classification_types = [
-        "Brilliant", "Great", "Best", "Excellent", "Good", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
+        "Brilliant", "Great", "Best", "Excellent", "Good", "Forced", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
     ];
     const color_index = {
         "Brilliant": "Teal",
@@ -145,6 +140,7 @@ function displayGameSummary(results) {
         "Best": "Olive_Green",
         "Excellent": "Green",
         "Good": "Muted_Green",
+        "Forced": "Black",
         "Book": "Brown",
         "Inaccuracy": "Yellow_Orange",
         "Mistake": "Orange",
@@ -182,7 +178,6 @@ function displayGameSummary(results) {
             </tr>
             <!-- Move Classifications -->
             ${classification_types.map((classification, index) => {
-        // Define colors based on values
         const whiteColor = color_index[classification];
         const blackColor = color_index[classification];
 
@@ -207,6 +202,7 @@ const icons = {
     "Best": "best.svg",
     "Excellent": "excellent.svg",
     "Good": "good.svg",
+    "Forced": "forced.svg",
     "Book": "book.svg",
     "Inaccuracy": "inaccuracy.svg",
     "Mistake": "mistake.svg",
@@ -226,13 +222,11 @@ function getIcon(classification) {
 function displayAnalysis(analysisData) {
     const outputDiv = document.getElementById('moveDetails');
     if (!outputDiv) {
-        console.error("Error: analysis-output element not found");
         return;
     }
     if (!analysisData || analysisData.length === 0) {
         return;
     }
-    // Create or reset the table
     if (!outputDiv.querySelector("table")) {
         outputDiv.innerHTML = `
             <table>
@@ -244,14 +238,10 @@ function displayAnalysis(analysisData) {
             </table>`;
     }
     const tableBody = document.getElementById("analysis-body");
-    // Reset arrays
     analysisData.forEach((move, index) => {
-        // Store opening name for each move. (Assuming move.opening_name is provided)
         opening_names.push(move.opening_name || "Unknown");
 
-        // For move history table, pair white and black moves
         if (index % 2 === 0) {
-            // Create a new row for white move with an empty black move cell
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${Math.floor(move.move_number / 2) + 1}</td>
@@ -260,18 +250,12 @@ function displayAnalysis(analysisData) {
             `;
             tableBody.appendChild(row);
         } else {
-            // Fill black move in the corresponding row
             const moveNum = Math.floor(move.move_number / 2);
             const blackMoveCell = document.getElementById(`black-move-${moveNum}`);
             if (blackMoveCell) {
                 blackMoveCell.textContent = move.move;
             }
         }
-
-        // console.log("Processing move:", move.move);
-
-
-        // **Process actual move**
         let moveResult = game.move(move.move);
         if (moveResult) {
             let currentFen = game.fen();
@@ -280,7 +264,6 @@ function displayAnalysis(analysisData) {
             positions.push(null);
         }
         game.undo();
-        // **Process best move**
         if (move.best_move) {
             let bestmoveResult = game.move(move.best_move);
             if (bestmoveResult) {
@@ -288,19 +271,16 @@ function displayAnalysis(analysisData) {
             } else {
                 best_move_position.push(null);
             }
-            game.undo(); // Undo best move separately
+            game.undo();
         } else {
             best_move_position.push(null);
         }
         game.move(move.move);
         move_arr.push(move.move)
-        classification_arr.push(move.classification);// Undo actual move separately
-        // console.log(move_arr)
+        classification_arr.push(move.classification);
     });
     if (move_arr.length >= total_moves) {
-        // console.log("Position array updated", positions);
         setupMoveHistoryNavigation(positions, best_move_position);
-        // Delay updating board to ensure positions is fully populated
         setTimeout(() => {
             updateBoardToLastMove();
         }, 100);
@@ -308,7 +288,6 @@ function displayAnalysis(analysisData) {
 }
 
 function updateBoardToLastMove() {
-    console.log('updateBoardtoLastMove')
     if (positions.length > 0 && positions[positions.length - 1]) {
         board.position(positions[positions.length - 1]);
         playSound(move_arr[move_arr.length - 1]);
@@ -325,7 +304,6 @@ function setupMoveHistoryNavigation(positions, best_move_position) {
     moveEntries.forEach((entry, index) => {
         entry.querySelectorAll("td").forEach((cell, turn) => {
             cell.addEventListener("click", function () {
-                console.log('clicked')
                 let idx = turn === 1 ? 2 * index : 2 * index + 1;
                 if (positions[idx] && positions[idx] !== null) {
                     board.position(positions[idx]);
@@ -346,35 +324,28 @@ function setupMoveHistoryNavigation(positions, best_move_position) {
 }
 
 
-// Function to highlight the move in the analysis table
 function highlightCurrentMove(index, turn) {
-    // Remove existing highlights
     document.querySelectorAll("#analysis-body td").forEach(cell => {
         cell.classList.remove("highlighted-move");
     });
 
-    // Find the correct move cell to highlight
     const moveEntries = document.querySelectorAll("#analysis-body tr");
     if (moveEntries[index]) {
         const moveCells = moveEntries[index].querySelectorAll("td");
         currentMoveIndex = 2 * index + (turn - 1);
-        // console.log(currentMoveIndex)
         if (moveCells[turn]) {
             moveCells[turn].classList.add("highlighted-move");
         }
     }
 }
 
-// Function to update the opening display based on the current move
 function updateOpeningDisplay(index) {
-    // Assume there is an element with id "current-opening" in your summary area.
     const openingDisplay = document.getElementById("opening_name");
     if (openingDisplay) {
         openingDisplay.textContent = "Opening: " + opening_names[index] || "Unknown Opening";
     }
 }
 
-// Clear canvas arrow (if needed)
 function clearArrowCanvas() {
     const canvas = document.getElementById("arrowCanvas");
     if (canvas) {
@@ -387,20 +358,18 @@ function showSuggestedMove(from, to) {
     const canvas = document.getElementById("arrowCanvas");
     const boardElement = document.getElementById("board");
 
-    // Set canvas size to match board size
     canvas.width = boardElement.clientWidth;
     canvas.height = boardElement.clientHeight;
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
-    canvas.style.pointerEvents = "none"; // Prevent blocking clicks
+    canvas.style.pointerEvents = "none";
 
     const ctx = canvas.getContext("2d");
 
-    // Convert chess square (e.g., "e4") to pixel coordinates
     function getSquareCenter(square) {
-        const file = square.charCodeAt(0) - 97; // 'a' -> 0, etc.
-        const rank = 8 - parseInt(square[1]);  // '8' -> 0, etc.
+        const file = square.charCodeAt(0) - 97;
+        const rank = 8 - parseInt(square[1]);
         const squareSize = canvas.width / 8;
         return {
             x: (file + 0.5) * squareSize,
@@ -411,21 +380,18 @@ function showSuggestedMove(from, to) {
     const start = getSquareCenter(from);
     const end = getSquareCenter(to);
 
-    // Draw arrow on canvas
     function drawArrow(ctx, from, to) {
-        const headLength = 15; // Arrowhead size
+        const headLength = 15;
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
 
-        ctx.strokeStyle = "green"; // Arrow color
+        ctx.strokeStyle = "green";
         ctx.lineWidth = 4;
 
-        // Draw line
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
         ctx.lineTo(to.x, to.y);
         ctx.stroke();
 
-        // Draw arrowhead
         ctx.beginPath();
         ctx.moveTo(to.x, to.y);
         ctx.lineTo(to.x - headLength * Math.cos(angle - Math.PI / 6),
@@ -437,12 +403,10 @@ function showSuggestedMove(from, to) {
         ctx.fill();
     }
 
-    // Clear previous arrow and draw new one
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawArrow(ctx, start, end);
 }
 
-// Toggle review panel
 if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     toggleReviewButton.addEventListener("click", function () {
         analyzeWindow.style.display = "none";
@@ -451,19 +415,18 @@ if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
 }
 
 function playSound(sanMove) {
-    let soundFile = "move.mp3"; // Default sound
-    // console.log(sanMove);
+    let soundFile = "move.mp3";
     if (sanMove.includes("#")) {
-        soundFile = "game_end.mp3"; // Stalemate or Checkmate
+        soundFile = "game_end.mp3";
     } else if (sanMove.includes("+")) {
-        soundFile = "check.mp3"; // Check move
+        soundFile = "check.mp3";
     } else if (sanMove.includes("=")) {
-        soundFile = "promote.mp3"; // Promotion
+        soundFile = "promote.mp3";
     }
     else if (sanMove.includes("O-O") || sanMove.includes("O-O-O")) {
-        soundFile = "castle.mp3"; // Castling
+        soundFile = "castle.mp3";
     } else if (sanMove.includes("x")) {
-        soundFile = "capture.mp3"; // Capture move
+        soundFile = "capture.mp3";
     }
     else {
         soundFile = "move.mp3";
@@ -476,19 +439,14 @@ function playSound(sanMove) {
 function getDestinationSquare(idx, move) {
     let isWhiteTurn = false;
     if ((idx & 1) === 0) isWhiteTurn = true;
-    // Handle castling moves based on turn
-    console.log(isWhiteTurn, idx);
-    if (move === "O-O") return isWhiteTurn ? "g1" : "g8";  // Kingside castle
-    if (move === "O-O-O") return isWhiteTurn ? "c1" : "c8"; // Queenside castle
+    if (move === "O-O") return isWhiteTurn ? "g1" : "g8";
+    if (move === "O-O-O") return isWhiteTurn ? "c1" : "c8";
 
-    // Extract the destination square from move notation
-    let match = move.match(/[a-h][1-8](?=[+#]?)/);  // Find a valid square at the end
-    console.log("sqaure matched:" + match);
-    return match ? match[0] : null; // Remove special characters
+    let match = move.match(/[a-h][1-8](?=[+#]?)/);
+    return match ? match[0] : null;
 }
 
 
-// Board initialization and event handlers
 document.addEventListener("DOMContentLoaded", function () {
     let moveHistoryStack = [];
     let selectedSquare = null;
@@ -517,8 +475,6 @@ document.addEventListener("DOMContentLoaded", function () {
         currentMoveIndex = moveHistoryStack.length;
         board.position(game.fen());
         updateHistory();
-        // Play move sound when user moves piece
-        // playSound();
     }
 
     function highlightMoves(source) {
@@ -563,27 +519,21 @@ document.addEventListener("DOMContentLoaded", function () {
         let temp = playerWhite.innerHTML;
         playerWhite.innerHTML = playerBlack.innerHTML;
         playerBlack.innerHTML = temp;
-        // console.log(playerBlack.innerHTML);
 
     });
 
     document.getElementById("startPosition").addEventListener("click", function () {
         idx = 0
-        board.position(positions[idx]); // Update the same board instance
-        playSound(move_arr[idx]); // Play move sound
+        board.position(positions[idx]);
+        playSound(move_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            // console.log("Drawing best move arrow:", best_move_position[idx]);
-            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+            showSuggestedMove(...best_move_position[idx]);
         } else {
-            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        // console.log(positions[idx], turn)
-        // console.log(best_move_position[idx], turn)
-        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
         addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
@@ -594,21 +544,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (idx < 0) {
             return;
         }
-        board.position(positions[idx]); // Update the same board instance
-        playSound(move_arr[idx]); // Play move sound
+        board.position(positions[idx]);
+        playSound(move_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            // console.log("Drawing best move arrow:", best_move_position[idx]);
-            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+            showSuggestedMove(...best_move_position[idx]);
         } else {
-            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        // console.log(positions[idx], turn)
-        // console.log(best_move_position[idx], turn)
-        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
         addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
@@ -619,21 +564,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (idx >= positions.length) {
             return;
         }
-        board.position(positions[idx]); // Update the same board instance
-        playSound(move_arr[idx]); // Play move sound
+        board.position(positions[idx]);
+        playSound(move_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            // console.log("Drawing best move arrow:", best_move_position[idx]);
-            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+            showSuggestedMove(...best_move_position[idx]);
         } else {
-            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        // console.log(positions[idx], turn)
-        // console.log(best_move_position[idx], turn)
-        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
         addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
@@ -641,21 +581,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("endPosition").addEventListener("click", function () {
         idx = positions.length - 1
-        board.position(positions[idx]); // Update the same board instance
-        playSound(move_arr[idx]); // Play move sound
+        board.position(positions[idx]);
+        playSound(move_arr[idx]);
 
         if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            // console.log("Drawing best move arrow:", best_move_position[idx]);
-            showSuggestedMove(...best_move_position[idx]); // Draw arrow
+            showSuggestedMove(...best_move_position[idx]);
         } else {
-            // console.log("No best move found for index:", idx);
             clearArrowCanvas();
         }
         if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
         else { turn = 1; index = idx / 2; }
-        // console.log(positions[idx], turn)
-        // console.log(best_move_position[idx], turn)
-        // console.log(index, turn)
         highlightCurrentMove(index, turn);
         updateOpeningDisplay(idx);
         addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
@@ -664,27 +599,21 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addClassificationIcon = function (idx, move, classification) {
         let square = getDestinationSquare(idx, move);
 
-        // Remove previous classification icons
         document.querySelectorAll(".classification-icon").forEach(icon => icon.remove());
-        console.log(square)
         if (!square) return;
 
         let board = document.getElementById("board");
         let pieceSquare = board.querySelector(`.square-${square}`);
-        console.log(pieceSquare);
         if (!pieceSquare) return;
 
-        // Wait for the board update to complete
         setTimeout(() => {
             let piece = pieceSquare.querySelector("img");
 
             if (!piece) {
-                console.log(`Piece not found on ${square}. Retrying...`);
                 setTimeout(() => window.addClassificationIcon(idx, move, classification), 50);
                 return;
             }
 
-            // Wrap the piece in a div (if not already wrapped)
             let wrapper = pieceSquare.querySelector(".classification-wrapper");
             if (!wrapper) {
                 wrapper = document.createElement("div");
@@ -693,23 +622,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 wrapper.appendChild(piece);
             }
 
-            // Create the icon element
             let fileName = icons[classification];
-
             let icon = document.createElement("img");
             icon.classList.add("classification-icon");
             icon.src = `/static/media/${fileName}`;
             icon.alt = classification;
-            console.log(icon);
-            // Append the icon inside the wrapper
             wrapper.appendChild(icon);
-            // console.log(move, classification, square);
-        }, 100); // Small delay to ensure DOM update
+        }, 100);
 
-        // Create the icon element properly
     };
     window.addEventListener("pageshow", function (event) {
-        if (event.persisted) {  // Detect if coming from bfcache (back-forward cache)
+        if (event.persisted) {
             localStorage.removeItem("pgnData");
         }
     });

@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% block title %} Home {% endblock %} {% block head %}
+{% extends "base.html" %} {% block title %} Check-Reviewer {% endblock %} 
+{% comment %} add a comment  {% endcomment %}
+{% block head %}
 {% load static%}
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="{% static 'media/logo.svg' %}">
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"
@@ -31,7 +34,6 @@
       <div class="card-body" id="1-username">White Player</div>
     </div>
   </div>
-  <!-- Loader Overlay -->
   <div id="loader-overlay">
     <div class="loader"></div>
   </div>
@@ -40,7 +42,6 @@
       PGN parsed successfully!
     </div>
 
-    <!-- Analyze Window (Initially Visible) -->
     <div id="analyzeWindow" class="analyze-panel">
       <h3>Analyze Your Game!</h3>
       <label for="depthSlider"><strong>Depth:</strong></label>
@@ -60,7 +61,6 @@
       </button>
     </div>
 
-    <!-- Move History Window (Initially Hidden) -->
     <div id="moveHistoryWindow" class="move-list hidden">
       <h3>Move History</h3>
       <div id="opening_name"></div>
@@ -84,7 +84,6 @@
       </div>
     </div>
 
-    <!-- Analysis Window (Initially Visible) -->
     <div id="resultWindow" class="analyze-panel">
       <h2>Game Analysis Summary</h2>
 

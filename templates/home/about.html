@@ -1,1 +1,73 @@
 {% extends "base.html" %}
+{% block title %} About Us - Chess Reviewer {% endblock %}
+{% comment %} comment {% endcomment %}
+{% block head %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css_files/about.css' %}">
+{% endblock %}
+
+{% block body %}
+<div class="container my-5">
+    <div class="about-section">
+        <h1>About <img src="{% static 'media/logo.svg' %}" class="logo" alt="Creator Image" width='40px' height='40px'> Check</h1>
+        <p class="lead">
+            Welcome to Chess Reviewer, an advanced tool designed to analyze and enhance your chess gameplay.
+            This platform provides in-depth analysis of your games, move classifications, and AI-powered suggestions
+            to help you improve at every level.
+        </p>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h2>Our Mission</h2>
+            <p>
+                Chess Reviewer is built to help players refine their strategies with precise move evaluation, 
+                mistake detection, and optimal move recommendations. Our platform integrates powerful AI-driven
+                analysis, making chess learning and reviewing easier than ever.
+            </p>
+        </div>
+        <div class="col-md-6">
+            {% comment %} <img src="{% static 'media/about_chess.jpg' %}" class="img-fluid rounded shadow" alt="Chess Analysis"> {% endcomment %}
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6">
+            {% comment %} <img src="{% static 'media/creator.jpg' %}" class="img-fluid rounded shadow" alt="Creator Image"> {% endcomment %}
+        </div>
+        <div class="col-md-6">
+            <h2>Meet the Creator</h2>
+            <p>
+                Hi, I'm <strong>Raj Kedia</strong>, the creator of Chess Reviewer. As a final-year B.Tech student 
+                at NIT Meghalaya and a passionate developer, I built this platform to help chess enthusiasts 
+                understand their games better. My goal was to integrate AI-powered move analysis and provide 
+                a user-friendly interface for reviewing chess matches.
+            </p>
+            <p>
+                With experience in web development, I ensure that Chess Reviewer 
+                keeps improving with new features and better accuracy.
+            </p>
+
+            <!-- Social Media Icons -->
+            <div class="social-links">
+                <a href="https://www.facebook.com/Rajkedia19/" target="_blank" class="social-icon">
+                    <img src="{% static 'media/facebook.svg' %}" alt="Facebook">
+                </a>
+                <a href="https://www.instagram.com/rajkedia19/" target="_blank" class="social-icon">
+                    <img src="{% static 'media/instagram.svg' %}" alt="Instagram">
+                </a>
+                <a href="https://www.linkedin.com/in/rajkedia19" target="_blank" class="social-icon">
+                    <img src="{% static 'media/linkedin.svg' %}" alt="LinkedIn">
+                </a><a href="https://github.com/Raj-Kedia" target="_blank" class="social-icon">
+                    <img src="{% static 'media/github.svg' %}" alt="LinkedIn">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{% url 'contact' %}" class="btn btn-primary">Any suggestions</a>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,6 +1,6 @@
 from .engine import *
 from .evaluate_positions import *
-# Move classifications
+
 classifications = {
     "best": "Best",
     "brilliant": "Brilliant",
@@ -17,37 +17,32 @@ classifications = {
 
 
 def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move_class, depthValue):
-    print("start")
     if len(list(board.legal_moves)) == 1 and best_move == played_move:
         return classifications["forced"]
-    print("going to evaluate best move")
-    if isinstance(best_move, str):  # Ensure it's a Move object
+    if isinstance(best_move, str):
         best_move = chess.Move.from_uci(best_move)
 
-    if best_move in board.legal_moves:  # Safety check
-        board.push(best_move)  # Play best move
+    if best_move in board.legal_moves:
+        board.push(best_move)
         best_move_eval = evaluate_position(
-            engine, board, depthValue)  # Evaluate new position
-        board.pop()  # Undo the move
+            board, depthValue)
+        board.pop()
     else:
-        # If best move is illegal (shouldn't happen)
         best_move_eval = float("-inf")
     prev_eval = (eval_loss+played_move_eval)
     gain_best = best_move_eval - prev_eval
     gain_played = played_move_eval - prev_eval
-    print("Started classificaiton")
-    if gain_played < gain_best:
+    if gain_played < gain_best and eval_loss <= -500:
         return classifications["brilliant"]
 
     if played_move == best_move:
-        if gain_best >= 150:
+        if eval_loss <= -150:
             return classifications["great"]
         return classifications["best"]
     if eval_loss <= -50:
         return classifications['excellent']
     if -50 <= eval_loss <= 0:
         return classifications['good']
-    print('Till now no error!!')
     if board.is_capture(best_move) and not board.is_capture(played_move) and eval_loss > 0:
         return classifications["miss"]
     if eval_loss >= 50:

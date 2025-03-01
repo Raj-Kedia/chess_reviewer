@@ -4,4 +4,4 @@ from rest_framework.pagination import CursorPagination
 
 class MoveCursorPagination(CursorPagination):
     page_size = 10
-    ordering = "id"  # Ensure ordering by created_at
+    ordering = "id"

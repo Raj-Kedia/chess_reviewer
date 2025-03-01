@@ -43,7 +43,6 @@ class AnalyzePGNView(APIView):
                 cursor = data.get("cursor", '').strip()
             if not pgn_string and not cursor:
                 return Response({"error": "PGN data missing"}, status=status.HTTP_400_BAD_REQUEST)
-            # Parse PGN
             if pgn_string:
                 MoveAnalysis.objects.all().delete()
 
@@ -53,9 +52,7 @@ class AnalyzePGNView(APIView):
 
                 metadata, moves = parse_pgn(pgn_string)
 
-                # Process moves
                 analysis, results = analyze_pgn(moves, metadata, depthValue)
-                # Paginate response
 
                 for idx, move_data in enumerate(analysis):
                     MoveAnalysis.objects.create(
@@ -66,10 +63,9 @@ class AnalyzePGNView(APIView):
                         opening_name=move_data['op'],
                         classification=move_data['class']
                     )
-                # Paginate using a QuerySet instead of a list
                 paginator = self.pagination_class()
                 queryset = MoveAnalysis.objects.all().order_by(
-                    "id")  # Ensure ordering
+                    "id")
                 result_page = paginator.paginate_queryset(queryset, request)
 
                 return paginator.get_paginated_response({
