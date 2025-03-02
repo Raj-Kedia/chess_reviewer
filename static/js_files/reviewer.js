@@ -70,6 +70,11 @@ function extractCursor(url) {
     const params = new URLSearchParams(url.split('?')[1]);
     return params.get('cursor');
 }
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
 function analyzeGame(firstRequest = false) {
     if (!nextPageUrl) { return; }
 
@@ -88,7 +93,10 @@ function analyzeGame(firstRequest = false) {
 
     fetch(nextPageUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            'X-CSRFToken': getCSRFToken()
+        },
         body: JSON.stringify(requestData),
     })
         .then(response => response.json())

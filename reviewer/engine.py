@@ -2,7 +2,7 @@ import chess
 import chess.pgn
 import chess.engine
 
-engine_path = r"D:\study\projects\chess_reviewer\chess_reviewer\stockfish\stockfish-windows-x86-64-avx2.exe"
+engine_path = r"stockfish\stockfish-windows-x86-64-avx2.exe"
 engine = None
 
 
