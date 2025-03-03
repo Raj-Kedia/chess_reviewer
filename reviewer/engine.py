@@ -2,8 +2,9 @@ import chess
 import chess.pgn
 import chess.engine
 import os
-engine_path = os.path.abspath(
-    "staticfiles\stockfish\stockfish-windows-x86-64-avx2.exe")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+engine_path = os.path.join(BASE_DIR, 'staticfiles',
+                           'stockfish', 'stockfish-windows-x86-64-avx2.exe')
 engine = None
 
 
