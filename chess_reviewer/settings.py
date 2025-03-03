@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from google.cloud import secretmanager
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
@@ -23,10 +24,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
-# with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
-#     SECRET_KEY = f.read().strip()
 
+def get_secret(secret_name):
+    """Fetches a secret value from Google Cloud Secret Manager."""
+    project_id = os.getenv(
+        'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
+    client = secretmanager.SecretManagerServiceClient()
+
+    # Build the resource name of the secret
+    name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+
+    # Access the secret version
+    response = client.access_secret_version(request={"name": name})
+
+    # Return the secret value as a string
+    return response.payload.data.decode("UTF-8")
+
+
+# Fetch your Django secret key from Secret Manager
+SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
