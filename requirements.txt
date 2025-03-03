@@ -3,7 +3,7 @@ cachetools==5.5.2
 certifi==2025.1.31
 charset-normalizer==3.4.1
 chess==1.11.1
-django==5.1.6
+django==4.2.19
 djangorestframework==3.15.2
 gcloud==0.18.3
 google-api-core==2.24.1
