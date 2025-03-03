@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 # with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
 #     SECRET_KEY = f.read().strip()
 
