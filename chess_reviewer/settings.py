@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from decouple import config
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
