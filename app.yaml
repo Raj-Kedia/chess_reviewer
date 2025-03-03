@@ -1,0 +1,17 @@
+entrypoint: gunicorn -b :$PORT chess_reviewer.wsgi  
+handlers:
+- url: /static
+  static_dir: static/
+
+- url: /.*
+  script: auto
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: "chess_reviewer.settings"
+
+automatic_scaling:
+  target_cpu_utilization: 0.65
+  min_instances: 1
+  max_instances: 5
+
+service_account: "check-chess-game-review-system@appspot.gserviceaccount.com"

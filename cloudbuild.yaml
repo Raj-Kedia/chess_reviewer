@@ -1,5 +1,12 @@
 steps:
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['app', 'deploy']
+  # Step 1: Authenticate with Google Cloud
+  - name: "gcr.io/cloud-builders/gcloud"
+    args: ["auth", "activate-service-account", "--key-file=/workspace/service-account.json"]
+
+  # Step 2: Deploy the Django app to App Engine
+  - name: "gcr.io/cloud-builders/gcloud"
+    args: ["app", "deploy", "--quiet"]
+
+timeout: "1600s"
 options:
   logging: CLOUD_LOGGING_ONLY
