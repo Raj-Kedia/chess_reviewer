@@ -74,5 +74,5 @@ def get_engine():
 
 
 board = chess.Board()
-if engine:
+if engine is not None:
     engine.quit()
