@@ -14,6 +14,8 @@ from google.cloud import secretmanager
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
+from google.auth import default
+from google.auth.exceptions import DefaultCredentialsError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,16 +26,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
+def get_project_id():
+    """Fetch the Google Cloud Project ID dynamically."""
+    try:
+        credentials, project_id = default()
+        if project_id:
+            return project_id
+    except DefaultCredentialsError:
+        pass
+    # Fallback if environment variable is set
+    return os.getenv("GOOGLE_CLOUD_PROJECT")
+
 
 def get_secret(secret_name):
     """Fetches a secret value from Google Cloud Secret Manager."""
-    project_id = os.getenv(
-        'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
+    # project_id = os.getenv(
+    #     'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
+    project_id = get_project_id()
     client = secretmanager.SecretManagerServiceClient()
 
     # Build the resource name of the secret
     name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
-
     # Access the secret version
     response = client.access_secret_version(request={"name": name})
 
@@ -41,6 +54,10 @@ def get_secret(secret_name):
     return response.payload.data.decode("UTF-8")
 
 
+credentials_json = get_secret("SERVICE_ACCOUNT_KEY")
+
+# Set the JSON content as an environment variable
+os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = credentials_json
 # Fetch your Django secret key from Secret Manager
 SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
