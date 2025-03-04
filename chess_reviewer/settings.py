@@ -42,7 +42,7 @@ def get_secret(secret_name):
 
 
 # Fetch your Django secret key from Secret Manager
-SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
+SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
