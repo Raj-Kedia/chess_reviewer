@@ -25,7 +25,7 @@ def get_stockfish_path():
     else:
         # Use local Stockfish in development
         local_path = os.path.join(
-            LOCAL_STOCKFISH_PATH, "stockfish-ubuntu-x86-64-avx2")
+            LOCAL_STOCKFISH_PATH, "stockfish-windows-x86-64-avx2.exe")
         if os.path.exists(local_path):
             print(f"Using local Stockfish: {local_path}")
             return local_path
