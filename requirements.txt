@@ -33,3 +33,4 @@ stockfish==3.0.0
 tzdata==2025.1
 urllib3==2.3.0
 whitenoise==6.9.0
+stockfish==3.32.0

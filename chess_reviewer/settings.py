@@ -43,10 +43,11 @@ def get_secret(secret_name):
     # project_id = os.getenv(
     #     'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
     project_id = get_project_id()
+    # print("project_id", project_id)
     client = secretmanager.SecretManagerServiceClient()
-
     # Build the resource name of the secret
     name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+    print("name_url", name)
     # Access the secret version
     response = client.access_secret_version(request={"name": name})
 
