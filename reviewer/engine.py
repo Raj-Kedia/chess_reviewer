@@ -45,7 +45,7 @@ def download_stockfish():
                 f"Local Stockfish binary not found at {local_path}")
 
     # Running in cloud, use /tmp for App Engine
-    cloud_path = os.path.join("/tmp", stockfish_file)
+    cloud_path = os.path.join(BUCKET_URL, "/tmp", stockfish_file)
 
     if not os.path.exists(cloud_path):  # Download only if not already present
         file_url = BUCKET_URL + stockfish_file
