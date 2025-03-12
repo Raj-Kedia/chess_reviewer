@@ -58,9 +58,13 @@ engine = None
 def get_engine():
     global engine
     try:
+        print(engine)
         if engine is None:
+            print('engine is not none')
             engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+            print(engine)
         else:
+            print('engine is none')
             engine.ping()
     except (chess.engine.EngineTerminatedError, chess.engine.EngineError):
         engine = chess.engine.SimpleEngine.popen_uci(engine_path)
@@ -69,5 +73,5 @@ def get_engine():
 
 
 board = chess.Board()
-if engine is not None:
-    engine.quit()
+# if engine is not None:
+#     engine.quit()
