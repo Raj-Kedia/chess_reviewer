@@ -8,7 +8,7 @@ BUCKET_URL = "https://storage.googleapis.com/check-chess-game-review-system.apps
 
 # Determine correct Stockfish file based on OS
 STOCKFISH_FILES = ["stockfish-windows-x86-64-avx2.exe",
-                   "stockfish-ubuntu-x86-64-avx2"]
+                   "stockfish-ubuntu-x86-64-sse41-popcnt"]
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'staticfiles', "stockfish")
