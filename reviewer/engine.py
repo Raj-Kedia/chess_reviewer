@@ -8,7 +8,8 @@ from stockfish import Stockfish
 # BUCKET_URL = "https://storage.googleapis.com/check-chess-game-review-system.appspot.com/"
 
 # # Determine correct Stockfish file based on OS
-STOCKFISH_FILES = ["stockfish-windows-x86-64-avx2.exe"]
+STOCKFISH_FILES = ["stockfish-windows-x86-64-avx2.exe",
+                   "stockfish-ubuntu-x86-64-avx2 (1).tar"]
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'staticfiles', "stockfish")
@@ -62,7 +63,8 @@ def get_engine():
     #     stockfish = Stockfish(stockfish_path)
     #     return stockfish
     # else:
-    stockfish_file = STOCKFISH_FILES[0]
+    stockfish_file = STOCKFISH_FILES[1] if is_running_in_cloud(
+    ) else STOCKFISH_FILES[0]
     local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
     if os.path.exists(local_path):
         print(f"Using local Stockfish: {local_path}")
