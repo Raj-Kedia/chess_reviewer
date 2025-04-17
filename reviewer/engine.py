@@ -9,7 +9,7 @@ from stockfish import Stockfish
 
 # # Determine correct Stockfish file based on OS
 STOCKFISH_FILES = ["stockfish-windows-x86-64-avx2.exe",
-                   "stockfish-ubuntu-x86-64-avx2 (1).tar"]
+                   "stockfish-ubuntu-x86-64-avx2"]
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'staticfiles', "stockfish")
