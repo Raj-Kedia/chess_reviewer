@@ -10,3 +10,4 @@ python manage.py migrate
 
 # Collect static files
 python manage.py collectstatic --no-input 
+chmod +x /opt/render/project/src/static/stockfish/static/stockfish/stockfish-windows-x86-64-avx2.exe
