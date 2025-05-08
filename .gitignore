@@ -1,4 +1,4 @@
 myenv
 .env
-reviewer/__pycache__
+__pycache__
 staticfiles
