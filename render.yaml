@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: chess_reviewer
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn chess_reviewer.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false 

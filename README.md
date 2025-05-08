@@ -21,7 +21,7 @@ Chess Game Reviewer is a web application that allows users to review their chess
   - HTML, CSS
   
 - **Backend**:
-  - Django (for user authentication and game storage
+  - Django (for user authentication and game storage)
   - Gunicorn (WSGI server for deployment)
 
 ## How to Run

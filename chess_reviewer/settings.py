@@ -26,46 +26,46 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-def get_project_id():
-    """Fetch the Google Cloud Project ID dynamically."""
-    try:
-        credentials, project_id = default()
-        if project_id:
-            return project_id
-    except DefaultCredentialsError:
-        pass
-    # Fallback if environment variable is set
-    return os.getenv("GOOGLE_CLOUD_PROJECT")
+# def get_project_id():
+#     """Fetch the Google Cloud Project ID dynamically."""
+#     try:
+#         credentials, project_id = default()
+#         if project_id:
+#             return project_id
+#     except DefaultCredentialsError:
+#         pass
+#     # Fallback if environment variable is set
+#     return os.getenv("GOOGLE_CLOUD_PROJECT")
 
 
-def get_secret(secret_name):
-    """Fetches a secret value from Google Cloud Secret Manager."""
-    # project_id = os.getenv(
-    #     'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
-    project_id = get_project_id()
-    # print("project_id", project_id)
-    client = secretmanager.SecretManagerServiceClient()
-    # Build the resource name of the secret
-    name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
-    print("name_url", name)
-    # Access the secret version
-    response = client.access_secret_version(request={"name": name})
+# def get_secret(secret_name):
+#     """Fetches a secret value from Google Cloud Secret Manager."""
+#     # project_id = os.getenv(
+#     #     'GOOGLE_CLOUD_PROJECT')  # Ensure this is set in your environment
+#     project_id = get_project_id()
+#     # print("project_id", project_id)
+#     client = secretmanager.SecretManagerServiceClient()
+#     # Build the resource name of the secret
+#     name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+#     print("name_url", name)
+#     # Access the secret version
+#     response = client.access_secret_version(request={"name": name})
 
-    # Return the secret value as a string
-    return response.payload.data.decode("UTF-8")
+#     # Return the secret value as a string
+#     return response.payload.data.decode("UTF-8")
 
 
-credentials_json = get_secret("SERVICE_ACCOUNT_KEY")
+# credentials_json = get_secret("SERVICE_ACCOUNT_KEY")
 
 # Set the JSON content as an environment variable
-os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = credentials_json
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = credentials_json
 # Fetch your Django secret key from Secret Manager
-SECRET_KEY = get_secret("SECRET_KEY")
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY', "l=rlgjubv9^b)1*zwxb@hwsdu&k_r=(xaz$g!d1vd#+@md+mn^")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', "127.0.0.1", 'check.com',
-                 '34.55.61.134', 'check-chess-game-review-system.el.r.appspot.com']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -161,13 +161,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 ASE_DIR = Path(__file__).resolve().parent.parent
 
-STATIC_URL = "static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-    # "/var/www/static/",/c
-]
+STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

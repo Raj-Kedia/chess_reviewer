@@ -2,7 +2,7 @@ import json
 from typing import Optional
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-file_path = os.path.join(BASE_DIR, 'staticfiles',
+file_path = os.path.join(BASE_DIR, 'static',
                          'resources', 'openings.json')
 with open(file_path, "r") as f:
     openings = json.load(f)

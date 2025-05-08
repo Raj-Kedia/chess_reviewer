@@ -1,5 +1,3 @@
 myenv
 .env
-# staticfiles/stockfish/*
-# static/stockfish/*
 __pycache__
