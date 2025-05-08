@@ -62,7 +62,8 @@ def get_engine():
     #     stockfish = Stockfish(stockfish_path)
     #     return stockfish
     # else:
-    stockfish_file = STOCKFISH_FILES
+    stockfish_file = os.environ.get(
+        'STOCKFISH_FILE', "stockfish-windows-x86-64-avx2.exe")
     local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
     return chess.engine.SimpleEngine.popen_uci(local_path)
 
