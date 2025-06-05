@@ -11,4 +11,4 @@ python manage.py migrate
 # Collect static files
 python manage.py collectstatic --no-input 
 chmod +x /static/stockfish/stockfish-ubuntu-x86-64-avx2
-
+chmod +x /staticfiles/stockfish/stockfish-ubuntu-x86-64-avx2
