@@ -3,11 +3,11 @@ services:
     name: chess_reviewer
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn chess_reviewer.wsgi:application"
+    startCommand: "gunicorn chess_reviewer.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
-        value: false 
+        value: false

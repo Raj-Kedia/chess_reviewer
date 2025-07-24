@@ -12,3 +12,4 @@ python manage.py migrate --verbosity 2 --no-input
 python manage.py collectstatic --no-input 
 # chmod +x /static/stockfish/stockfish-ubuntu-x86-64-avx2
 # chmod +x /staticfiles/stockfish/stockfish-ubuntu-x86-64-avx2
+echo "✅ Build script completed successfully"
