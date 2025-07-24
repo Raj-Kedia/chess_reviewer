@@ -10,12 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from google.cloud import secretmanager
+# from google.cloud import secretmanager
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
-from google.auth import default
-from google.auth.exceptions import DefaultCredentialsError
+# from google.auth import default
+# from google.auth.exceptions import DefaultCredentialsError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
