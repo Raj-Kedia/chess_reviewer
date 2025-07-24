@@ -6,7 +6,7 @@ set -o errexit
 pip install -r requirements.txt
 
 # Run migrations
-python manage.py migrate
+python manage.py migrate --verbosity 2 --no-input
 
 # Collect static files
 python manage.py collectstatic --no-input 
