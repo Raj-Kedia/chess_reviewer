@@ -12,7 +12,9 @@ python manage.py collectstatic --no-input
 echo "✅ Static files collected successfully"
 
 # Run migrations
-python manage.py migrate --verbosity 2 --no-input
+timeout 60s python manage.py migrate --verbosity 2 --no-input
+# Test DB connection
+python manage.py showmigrations
 
 echo "✅ Migrations applied successfully"
 # chmod +x /static/stockfish/stockfish-ubuntu-x86-64-avx2
