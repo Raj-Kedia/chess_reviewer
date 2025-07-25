@@ -15,9 +15,9 @@ from .analyze import *
 import atexit
 
 
-def cleanup_engine():
-    if engine is not None:
-        engine.quit()
+# def cleanup_engine():
+#     if engine is not None:
+#         engine.quit()
 
 
 def index(request):

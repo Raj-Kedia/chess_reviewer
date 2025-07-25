@@ -79,6 +79,10 @@ def analyze_pgn(moves, metadata, depthValue):
         results["black_arr"] = Black_arr
         results["white_arr"] = White_arr
         results['total_moves'] = total_moves
+        atexit.register(cleanup_engine)
+
         return analysis, results
     except Exception as e:
+        atexit.register(cleanup_engine)
+
         raise ValueError(f"Something went wrong: {e}")

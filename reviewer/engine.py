@@ -5,6 +5,7 @@ import os
 import platform
 import urllib.request
 from stockfish import Stockfish
+import atexit
 # BUCKET_URL = "https://storage.googleapis.com/check-chess-game-review-system.appspot.com/"
 
 # # Determine correct Stockfish file based on OS
@@ -68,6 +69,12 @@ def get_engine():
     return chess.engine.SimpleEngine.popen_uci(local_path)
 
 
+def cleanup_engine():
+    if engine is not None:
+        try:
+            engine.quit()
+        except Exception:
+            pass
+
+
 board = chess.Board()
-# if engine is not None:
-#     engine.quit()
