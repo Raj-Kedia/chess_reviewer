@@ -12,7 +12,7 @@ python manage.py collectstatic --no-input
 echo "✅ Static files collected successfully"
 
 # Run migrations
-python manage.py makemigrations --verbosity 2
+timeout 60s python manage.py makemigrations --verbosity 2
 echo "✅ Migrations created successfully"
 timeout 60s python manage.py migrate --verbosity 2 --no-input
 # Test DB connection
