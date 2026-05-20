@@ -72,7 +72,7 @@ let cursor = null;
 async function fetchGame(firstRequest = true) {
     let username = document.getElementById("inputField").value.trim();
     if (!username) {
-        showAlert("Please enter your username", '"danger"');
+        showAlert("Please enter your username", "danger");
         return;
     }
 

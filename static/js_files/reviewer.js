@@ -108,11 +108,6 @@ function analyzeGame(firstRequest = false) {
                 return;
             }
 
-            if (firstRequest) {
-                loaderOverlay.style.display = "none";
-                document.body.classList.remove("loading");
-            }
-
             if (data.results.result) {
                 total_moves = data.results.result.total_moves;
                 displayGameSummary(data.results.result);
@@ -122,6 +117,9 @@ function analyzeGame(firstRequest = false) {
 
             if (nextPageUrl) {
                 analyzeGame();
+            } else {
+                loaderOverlay.style.display = "none";
+                document.body.classList.remove("loading");
             }
         })
         .catch(error => {
@@ -471,7 +469,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showAlert("No PGN provided", 'warning');
     }
     else {
-        showAlert("PGN prased successfully", 'success');
+        showAlert("PGN parsed successfully", 'success');
     }
 
     function handleMove(source, target) {

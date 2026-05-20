@@ -54,27 +54,33 @@ LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'static', "stockfish")
 
 # engine_path = download_stockfish()
 engine = None
+_engine = None
 
 
 def get_engine():
+    global _engine
     # if is_running_in_cloud():
     #     stockfish_path = os.path.expanduser(
     #         "~/stockfish/stockfish-ubuntu-x86-64-avx2")
     #     stockfish = Stockfish(stockfish_path)
     #     return stockfish
     # else:
-    stockfish_file = os.environ.get(
-        'STOCKFISH_FILE', "stockfish-windows-x86-64-avx2.exe")
-    local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
-    return chess.engine.SimpleEngine.popen_uci(local_path)
+    if _engine is None:
+        stockfish_file = os.environ.get(
+            'STOCKFISH_FILE', "stockfish-windows-x86-64-avx2.exe")
+        local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
+        _engine = chess.engine.SimpleEngine.popen_uci(local_path)
+    return _engine
 
 
 def cleanup_engine():
-    if engine is not None:
+    global _engine
+    if _engine is not None:
         try:
-            engine.quit()
+            _engine.quit()
         except Exception:
             pass
+        _engine = None
 
 
 board = chess.Board()

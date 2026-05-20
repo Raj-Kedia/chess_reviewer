@@ -9,7 +9,8 @@ with open(file_path, "r") as f:
 
 
 def get_opening_name(fen: str) -> Optional[str]:
+    fen_layout = fen.split()[0]
     for opening in openings:
-        if opening["fen"] == fen:
+        if opening["fen"].split()[0] == fen_layout:
             return opening["name"]
     return None
