@@ -6,101 +6,106 @@
 <link rel="icon" type="image/svg+xml" href="{% static 'media/logo.svg' %}">
 
 {% endblock %} {% block body %} 
-<div
-  class="d-flex justify-content-center align-items-center"
-  style="min-height: 100vh"
->
-  <form class="row g-3 text-center">
-    <div class="col-12">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          id="inputField"
-          placeholder="Write PGN"
-        />
+<div class="home-container d-flex justify-content-center align-items-center">
+  <div class="home-card shadow">
+    <div class="text-center mb-4">
+      <img src="{% static 'media/logo.svg' %}" alt="logo" class="home-logo mb-3" width="80" height="80">
+      <h2 class="home-title mb-1">Chess Reviewer</h2>
+      <p class="home-subtitle text-muted">Paste PGN or fetch your games from online platforms to analyze</p>
+    </div>
+
+    <form class="row g-3 text-center home-form">
+      <div class="col-12">
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control"
+            id="inputField"
+            placeholder="Write PGN"
+          />
+          <button
+            class="btn btn-secondary dropdown-toggle"
+            type="button"
+            id="dropdownMenuButton"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            PGN
+          </button>
+          <ul
+            class="dropdown-menu dropdown-menu-end"
+            aria-labelledby="dropdownMenuButton"
+          >
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                onclick="updatePlaceholder('PGN')"
+              >
+                PGN
+              </button>
+            </li>
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                onclick="updatePlaceholder('Chess.com')"
+              >
+                Chess.com
+              </button>
+            </li>
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                onclick="updatePlaceholder('Lichess.org')"
+              >
+                Lichess.org
+              </button>
+            </li>
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                onclick="updatePlaceholder('JSON')"
+              >
+                JSON
+              </button>
+            </li>
+          </ul>
+          <button
+            class="btn btn-outline-primary d-none"
+            id="fetchButton"
+            type="button"
+            onclick="fetchGame()"
+          >
+            ➜
+          </button>
+        </div>
+      </div>
+
+      <div class="col-12" id="selectedGameContainer" style="display: none">
+        <div class="alert alert-info text-center" id="selectedGameText"></div>
+      </div>
+
+      <div class="col-12 d-grid">
         <button
-          class="btn btn-secondary dropdown-toggle"
           type="button"
-          id="dropdownMenuButton"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
+          class="btn btn-primary btn-lg"
+          id="parsePGNButton"
+          onclick="parsePGN()"
         >
-          PGN
-        </button>
-        <ul
-          class="dropdown-menu dropdown-menu-end"
-          aria-labelledby="dropdownMenuButton"
-        >
-          <li>
-            <button
-              class="dropdown-item"
-              type="button"
-              onclick="updatePlaceholder('PGN')"
-            >
-              PGN
-            </button>
-          </li>
-          <li>
-            <button
-              class="dropdown-item"
-              type="button"
-              onclick="updatePlaceholder('Chess.com')"
-            >
-              Chess.com
-            </button>
-          </li>
-          <li>
-            <button
-              class="dropdown-item"
-              type="button"
-              onclick="updatePlaceholder('Lichess.org')"
-            >
-              Lichess.org
-            </button>
-          </li>
-          <li>
-            <button
-              class="dropdown-item"
-              type="button"
-              onclick="updatePlaceholder('JSON')"
-            >
-              JSON
-            </button>
-          </li>
-        </ul>
-        <button
-          class="btn btn-outline-primary d-none"
-          id="fetchButton"
-          type="button"
-          onclick="fetchGame()"
-        >
-          ➜
+          Parse PGN
         </button>
       </div>
-    </div>
 
-    <div class="col-12" id="selectedGameContainer" style="display: none">
-      <div class="alert alert-info text-center" id="selectedGameText"></div>
-    </div>
-
-    <div class="col-12 d-grid">
-      <button
-        type="button"
-        class="btn btn-outline-primary"
-        id="parsePGNButton"
-        onclick="parsePGN()"
-      >
-        Parse PGN
-      </button>
-    </div>
-
-    <div class="col-12 text-center mt-2">
-      <small id="pgnParsedMessage" class="text-success" style="display: none">
-        ✅ PGN parsed successfully!
-      </small>
-    </div>
-  </form>
+      <div class="col-12 text-center mt-2">
+        <small id="pgnParsedMessage" class="text-success" style="display: none">
+          ✅ PGN parsed successfully!
+        </small>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="loader-overlay">

@@ -19,8 +19,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
 
 {% endblock %} {% block body %}
-<div class="container">
-  <div id="game-container">
+<div class="container my-4">
+  <div class="reviewer-layout">
+    <div id="game-container">
     <div class="card" id="0-black">
       <div class="card-body" id="0-username">Black Player</div>
     </div>
@@ -42,21 +43,24 @@
       PGN parsed successfully!
     </div>
 
-    <div id="analyzeWindow" class="analyze-panel">
-      <h3>Analyze Your Game!</h3>
-      <label for="depthSlider"><strong>Depth:</strong></label>
-      <input
-        type="range"
-        id="depthSlider"
-        min="10"
-        max="30"
-        value="15"
-        step="1"
-        class="form-range"
-      />
-      <span id="depthValue">20</span>
-      <br />
-      <button class="btn btn-outline-success mt-3" id="analyzebutton">
+    <div id="analyzeWindow" class="analyze-panel d-flex flex-column justify-content-center align-items-stretch">
+      <h3 class="mb-4 text-center">Analyze Your Game!</h3>
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label for="depthSlider" class="form-label mb-0"><strong>Depth:</strong></label>
+          <span id="depthValue" class="badge bg-secondary fs-6">15</span>
+        </div>
+        <input
+          type="range"
+          id="depthSlider"
+          min="10"
+          max="30"
+          value="15"
+          step="1"
+          class="form-range"
+        />
+      </div>
+      <button class="btn btn-success w-100 py-2" id="analyzebutton">
         Analyze
       </button>
     </div>
@@ -92,6 +96,7 @@
         Review Moves
       </button>
     </div>
+  </div>
   </div>
 </div>
 <script src="{% static 'js_files/reviewer.js' %}" defer></script>

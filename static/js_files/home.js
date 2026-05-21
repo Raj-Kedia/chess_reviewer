@@ -52,6 +52,19 @@ function updatePlaceholder(option) {
         return;
     }
     inputField.placeholder = placeholderText[option] || "Enter value";
+    inputField.value = ""; // Reset the input field on platform change
+
+    // Clear any previously selected online game
+    selectedPGN = "";
+    selectedGameIndex = -1;
+    const selectedGameContainer = document.getElementById("selectedGameContainer");
+    if (selectedGameContainer) {
+        selectedGameContainer.style.display = "none";
+    }
+    const selectedGameText = document.getElementById("selectedGameText");
+    if (selectedGameText) {
+        selectedGameText.innerHTML = "";
+    }
 
     if (selectedPlatform === "Chess.com" || selectedPlatform === "Lichess.org") {
         fetchButton.classList.remove("d-none");
@@ -77,9 +90,26 @@ async function fetchGame(firstRequest = true) {
     }
 
     const loaderOverlay = document.getElementById("loader-overlay");
-
     loaderOverlay.style.display = "flex";
     document.body.classList.add("loading");
+
+    if (firstRequest) {
+        cursor = null;
+        gameData = [];
+        let gameList = document.getElementById("gameList");
+        if (gameList) {
+            gameList.innerHTML = "";
+        }
+        let confirmBtn = document.getElementById("confirmSelection");
+        if (confirmBtn) {
+            confirmBtn.classList.add("d-none");
+        }
+        let loadMoreBtn = document.getElementById("loadMore");
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = "block";
+        }
+    }
+
     if (!nextPageUrl) return;
 
     const requestData = firstRequest
@@ -98,20 +128,24 @@ async function fetchGame(firstRequest = true) {
 
         let data = await response.json();
 
-
         if (!data || !data.results) {
-            if (!data || !data.results) {
-                showAlert("Invalid response from server: " + data.error, "danger");
-            }
+            showAlert("Invalid response from server: " + (data ? data.error : "unknown error"), "danger");
             loaderOverlay.style.display = "none";
             document.body.classList.remove("loading");
             return;
         }
+
         gameData.push(...data.results);
         displayGames(gameData);
 
-        if (data.next_cursor) {
-            cursor = data.next_cursor;
+        cursor = data.next_cursor || null;
+        let loadMoreBtn = document.getElementById("loadMore");
+        if (loadMoreBtn) {
+            if (!cursor || data.results.length < 20) {
+                loadMoreBtn.style.display = "none";
+            } else {
+                loadMoreBtn.style.display = "block";
+            }
         }
     } catch (error) {
         showAlert("Error fetching games: " + error, "danger");

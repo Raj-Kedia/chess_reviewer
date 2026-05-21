@@ -4,7 +4,7 @@ const toggleReviewButton = document.getElementById("toggleReview");
 const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
-let depthValue = 20;
+let depthValue = 15;
 let nextPageUrl = "./analyze_pgn/";
 let cursor = null;
 const game = new Chess();
@@ -61,7 +61,7 @@ document.getElementById("depthSlider").addEventListener("input", function () {
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
         analyzeWindow.style.display = 'none';
-        resultWindow.style.display = 'block';
+        resultWindow.style.display = 'flex';
         analyzeGame(true);
     }
 });
@@ -141,17 +141,17 @@ function displayGameSummary(results) {
         "Brilliant", "Great", "Best", "Excellent", "Good", "Forced", "Book", "Inaccuracy", "Mistake", "Miss", "Blunder"
     ];
     const color_index = {
-        "Brilliant": "Teal",
-        "Great": "Dark_Blue",
-        "Best": "Olive_Green",
-        "Excellent": "Green",
-        "Good": "Muted_Green",
-        "Forced": "Black",
-        "Book": "Brown",
-        "Inaccuracy": "Yellow_Orange",
-        "Mistake": "Orange",
-        "Miss": "Red",
-        "Blunder": "Dark_Red",
+        "Brilliant": "#1baca6",
+        "Great": "#3b77a7",
+        "Best": "#95bb4a",
+        "Excellent": "#4f843c",
+        "Good": "#8ba862",
+        "Forced": "#374151",
+        "Book": "#a57753",
+        "Inaccuracy": "#f0c15c",
+        "Mistake": "#e67e22",
+        "Miss": "#d94d4d",
+        "Blunder": "#b33a3a",
     }
     const summaryDiv = document.getElementById("gameSummary");
     playerWhite.innerHTML = `
@@ -293,14 +293,51 @@ function displayAnalysis(analysisData) {
     }
 }
 
-function updateBoardToLastMove() {
-    if (positions.length > 0 && positions[positions.length - 1]) {
-        board.position(positions[positions.length - 1]);
-        playSound(move_arr[move_arr.length - 1]);
-        highlightCurrentMove(positions.length - 1);
-        updateOpeningDisplay(positions.length - 1);
-        addClassificationIcon(move_arr.length - 1, move_arr[move_arr.length - 1], classification_arr[classification_arr.length - 1])
+function goToMove(idx) {
+    if (positions.length === 0) return;
+    if (idx < -1 || idx >= positions.length) {
+        return;
+    }
+    currentMoveIndex = idx;
 
+    if (idx === -1) {
+        board.position("start");
+        clearArrowCanvas();
+        document.querySelectorAll("#analysis-body td").forEach(cell => {
+            cell.classList.remove("highlighted-move");
+        });
+        const openingDisplay = document.getElementById("opening_name");
+        if (openingDisplay) {
+            openingDisplay.textContent = "Opening: Start Position";
+        }
+        document.querySelectorAll(".classification-icon").forEach(icon => icon.remove());
+    } else {
+        board.position(positions[idx]);
+        playSound(move_arr[idx]);
+
+        if (best_move_position[idx] && best_move_position[idx].length === 2) {
+            showSuggestedMove(...best_move_position[idx]);
+        } else {
+            clearArrowCanvas();
+        }
+
+        let turn, index;
+        if (idx & 1) {
+            turn = 2;
+            index = (idx - 1) / 2;
+        } else {
+            turn = 1;
+            index = idx / 2;
+        }
+        highlightCurrentMove(index, turn);
+        updateOpeningDisplay(idx);
+        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
+    }
+}
+
+function updateBoardToLastMove() {
+    if (positions.length > 0) {
+        goToMove(positions.length - 1);
     }
 }
 
@@ -308,24 +345,15 @@ function setupMoveHistoryNavigation(positions, best_move_position) {
     const moveEntries = document.querySelectorAll("#analysis-body tr");
 
     moveEntries.forEach((entry, index) => {
-        entry.querySelectorAll("td").forEach((cell, turn) => {
+        const cells = entry.querySelectorAll("td");
+        for (let turn = 1; turn <= 2; turn++) {
+            const cell = cells[turn];
+            if (!cell) continue;
             cell.addEventListener("click", function () {
                 let idx = turn === 1 ? 2 * index : 2 * index + 1;
-                if (positions[idx] && positions[idx] !== null) {
-                    board.position(positions[idx]);
-                    playSound(move_arr[idx]);
-
-                    if (best_move_position[idx] && best_move_position[idx].length === 2) {
-                        showSuggestedMove(...best_move_position[idx]);
-                    } else {
-                        clearArrowCanvas();
-                    }
-                    highlightCurrentMove(index, turn);
-                    updateOpeningDisplay(idx);
-                    addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
-                }
+                goToMove(idx);
             });
-        });
+        }
     });
 }
 
@@ -416,7 +444,7 @@ function showSuggestedMove(from, to) {
 if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     toggleReviewButton.addEventListener("click", function () {
         analyzeWindow.style.display = "none";
-        moveHistoryWindow.style.display = "block";
+        moveHistoryWindow.style.display = "flex";
     });
 }
 
@@ -529,77 +557,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.getElementById("startPosition").addEventListener("click", function () {
-        idx = 0
-        board.position(positions[idx]);
-        playSound(move_arr[idx]);
-
-        if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            showSuggestedMove(...best_move_position[idx]);
-        } else {
-            clearArrowCanvas();
-        }
-        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
-        else { turn = 1; index = idx / 2; }
-        highlightCurrentMove(index, turn);
-        updateOpeningDisplay(idx);
-        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
+        goToMove(-1);
     });
 
     document.getElementById("undoMove").addEventListener("click", function () {
-        idx = currentMoveIndex - 1;
-        if (idx < 0) {
-            return;
-        }
-        board.position(positions[idx]);
-        playSound(move_arr[idx]);
-
-        if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            showSuggestedMove(...best_move_position[idx]);
-        } else {
-            clearArrowCanvas();
-        }
-        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
-        else { turn = 1; index = idx / 2; }
-        highlightCurrentMove(index, turn);
-        updateOpeningDisplay(idx);
-        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
+        goToMove(currentMoveIndex - 1);
     });
 
     document.getElementById("redoMove").addEventListener("click", function () {
-        idx = currentMoveIndex + 1;
-        if (idx >= positions.length) {
-            return;
-        }
-        board.position(positions[idx]);
-        playSound(move_arr[idx]);
-
-        if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            showSuggestedMove(...best_move_position[idx]);
-        } else {
-            clearArrowCanvas();
-        }
-        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
-        else { turn = 1; index = idx / 2; }
-        highlightCurrentMove(index, turn);
-        updateOpeningDisplay(idx);
-        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
+        goToMove(currentMoveIndex + 1);
     });
 
     document.getElementById("endPosition").addEventListener("click", function () {
-        idx = positions.length - 1
-        board.position(positions[idx]);
-        playSound(move_arr[idx]);
-
-        if (best_move_position[idx] && best_move_position[idx].length === 2) {
-            showSuggestedMove(...best_move_position[idx]);
-        } else {
-            clearArrowCanvas();
-        }
-        if (idx & 1) { turn = 2; index = (idx - 1) / 2; }
-        else { turn = 1; index = idx / 2; }
-        highlightCurrentMove(index, turn);
-        updateOpeningDisplay(idx);
-        addClassificationIcon(idx, move_arr[idx], classification_arr[idx]);
+        goToMove(positions.length - 1);
     });
 
     window.addClassificationIcon = function (idx, move, classification) {

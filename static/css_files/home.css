@@ -35,3 +35,47 @@ body.loading {
     overflow: hidden;
     pointer-events: none;
 }
+
+.home-container {
+    min-height: calc(100vh - 56px); /* Subtract navbar height to avoid scrollbar */
+    padding: 40px 20px;
+    box-sizing: border-box;
+    background: radial-gradient(circle at 50% 50%, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.home-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 8px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.home-logo {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.home-logo:hover {
+    transform: rotate(360deg) scale(1.05);
+}
+
+.home-title {
+    font-weight: 800;
+    color: #212529;
+    letter-spacing: -0.5px;
+}
+
+.home-subtitle {
+    font-size: 0.95rem;
+    color: #6c757d;
+}
+
+.home-form {
+    width: 100%;
+    margin: 0 auto;
+}
