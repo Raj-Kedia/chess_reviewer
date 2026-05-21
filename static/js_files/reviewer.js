@@ -1,9 +1,13 @@
 let pgnData = localStorage.getItem("pgnData");
 const analyzeButton = document.getElementById("analyzebutton");
 const toggleReviewButton = document.getElementById("toggleReview");
+if (toggleReviewButton) {
+    toggleReviewButton.disabled = true;
+}
 const analyzeWindow = document.getElementById("analyzeWindow");
 const resultWindow = document.getElementById("resultWindow");
 const moveHistoryWindow = document.getElementById("moveHistoryWindow");
+const backToAnalyzeButton = document.getElementById("backToAnalyze");
 let depthValue = 15;
 let nextPageUrl = "./analyze_pgn/";
 let cursor = null;
@@ -57,9 +61,18 @@ function showAlert(message, type = "primary") {
 document.getElementById("depthSlider").addEventListener("input", function () {
     document.getElementById("depthValue").innerText = this.value;
     depthValue = this.value;
+    if (analyzeButton) {
+        analyzeButton.disabled = false;
+    }
 });
 analyzeButton.addEventListener("click", function () {
     if (typeof analyzeGame === "function") {
+        if (analyzeButton) {
+            analyzeButton.disabled = true;
+        }
+        if (toggleReviewButton) {
+            toggleReviewButton.disabled = true;
+        }
         analyzeWindow.style.display = 'none';
         resultWindow.style.display = 'flex';
         analyzeGame(true);
@@ -76,6 +89,38 @@ function getCSRFToken() {
         ?.split('=')[1];
 }
 function analyzeGame(firstRequest = false) {
+    if (firstRequest) {
+        nextPageUrl = "./analyze_pgn/";
+        cursor = null;
+        positions = [];
+        best_move_position = [];
+        opening_names = [];
+        move_arr = [];
+        classification_arr = [];
+        total_moves = 0;
+        currentMoveIndex = 0;
+        if (game && typeof game.reset === "function") {
+            game.reset();
+        }
+        if (board) {
+            board.position("start");
+        }
+        clearArrowCanvas();
+        document.querySelectorAll(".classification-icon").forEach(icon => icon.remove());
+        
+        const tableBody = document.getElementById("analysis-body");
+        if (tableBody) {
+            tableBody.innerHTML = "";
+        }
+        const gameSummary = document.getElementById("gameSummary");
+        if (gameSummary) {
+            gameSummary.innerHTML = "";
+        }
+        if (moveHistoryWindow) {
+            moveHistoryWindow.style.display = "none";
+        }
+    }
+
     if (!nextPageUrl) { return; }
 
     if (!firstRequest) {
@@ -120,6 +165,9 @@ function analyzeGame(firstRequest = false) {
             } else {
                 loaderOverlay.style.display = "none";
                 document.body.classList.remove("loading");
+                if (toggleReviewButton) {
+                    toggleReviewButton.disabled = false;
+                }
             }
         })
         .catch(error => {
@@ -445,6 +493,15 @@ if (toggleReviewButton && analyzeWindow && moveHistoryWindow) {
     toggleReviewButton.addEventListener("click", function () {
         analyzeWindow.style.display = "none";
         moveHistoryWindow.style.display = "flex";
+        toggleReviewButton.disabled = true;
+    });
+}
+
+if (backToAnalyzeButton && analyzeWindow && resultWindow && moveHistoryWindow) {
+    backToAnalyzeButton.addEventListener("click", function () {
+        analyzeWindow.style.display = "flex";
+        resultWindow.style.display = "none";
+        moveHistoryWindow.style.display = "none";
     });
 }
 
