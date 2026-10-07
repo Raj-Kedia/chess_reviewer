@@ -1,7 +1,10 @@
 # Chess Game Reviewer
 
+🚀 **Live Demo**: [https://chess-reviewer-101589719561.us-central1.run.app](https://chess-reviewer-101589719561.us-central1.run.app)  
+🎯 **Game Reviewer**: [https://chess-reviewer-101589719561.us-central1.run.app/reviewer/](https://chess-reviewer-101589719561.us-central1.run.app/reviewer/)
+
 ## Overview
-Chess Game Reviewer is a web application that allows users to review their chess games by fetching them from Chess.com and Lichess.org or manually inputting games. The application analyzes moves, provides best move suggestions, and offers an interactive game review experience.
+Chess Game Reviewer is a web application that allows users to review their chess games by fetching them from Chess.com and Lichess.org or manually inputting games. The application analyzes moves, provides best move suggestions, and offers an interactive game review experience powered by Stockfish.
 
 ## Features
 - **Game Import**: Fetch games from Chess.com and Lichess.org or manually input them.
@@ -17,12 +20,14 @@ Chess Game Reviewer is a web application that allows users to review their chess
 
 ## Tech Stack
 - **Frontend**:
-  - JavaScript (No React, Basic CSS for styling)
-  - HTML, CSS
+  - JavaScript, Chessboard.js, Chess.js
+  - HTML5, CSS3, Bootstrap 5
   
 - **Backend**:
-  - Django (for user authentication and game storage)
-  - Gunicorn (WSGI server for deployment)
+  - Django & Django REST Framework
+  - Python Chess & Stockfish Engine
+  - WhiteNoise & Gunicorn
+  - Docker & Google Cloud Run (Serverless Deployment)
 
 ## How to Run
 ### Prerequisites

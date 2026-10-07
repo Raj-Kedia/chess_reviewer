@@ -1,10 +1,11 @@
-from .engine import *
-
-engine = get_engine()
+import chess
+import chess.engine
+from .engine import get_engine
 
 
 def evaluate_position(board: chess.Board, depthValue: int) -> float:
     """Evaluates the board position using the engine."""
+    engine = get_engine()
     info = engine.analyse(board, chess.engine.Limit(depth=depthValue))
 
     if "score" not in info:

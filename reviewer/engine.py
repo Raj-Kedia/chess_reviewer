@@ -1,80 +1,86 @@
+import os
+import platform
+import shutil
+import atexit
 import chess
 import chess.pgn
 import chess.engine
-import os
-import platform
-import urllib.request
-from stockfish import Stockfish
-import atexit
-# BUCKET_URL = "https://storage.googleapis.com/check-chess-game-review-system.appspot.com/"
-
-# # Determine correct Stockfish file based on OS
-STOCKFISH_FILES = "stockfish-windows-x86-64-avx2.exe"
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'static', "stockfish")
+LOCAL_STOCKFISH_PATH = os.path.join(PARENT_DIR, 'static', 'stockfish')
+
+_engine = None
 
 
-# def is_running_in_cloud():
-#     """Check if running in a cloud environment (App Engine, Cloud Run, etc.)."""
-#     return os.getenv("GAE_ENV", "").startswith("standard") or os.getenv("K_SERVICE") is not None
+def _ensure_executable(path):
+    """Ensure the binary has executable permissions on Unix systems."""
+    if os.name != 'nt' and os.path.exists(path):
+        try:
+            current_mode = os.stat(path).st_mode
+            os.chmod(path, current_mode | 0o755)
+        except Exception as e:
+            print(f"Warning: could not set executable permissions on {path}: {e}")
 
 
-# def download_stockfish():
-#     """Use local Stockfish for development; download from GCS only in production."""
-#     # os_name = platform.system()
-#     # stockfish_file = STOCKFISH_FILES.get(os_name)
+def get_stockfish_path():
+    """Find the appropriate Stockfish binary path across development and cloud environments."""
+    # 1. Custom explicit path from environment variable
+    custom_path = os.environ.get('STOCKFISH_PATH')
+    if custom_path and os.path.exists(custom_path):
+        _ensure_executable(custom_path)
+        return custom_path
 
-#     # if not stockfish_file:
-#     #     raise Exception("Unsupported OS for Stockfish")
+    # 2. Check system-installed stockfish (e.g. apt-get install stockfish in Docker/Cloud Run)
+    system_path = shutil.which('stockfish')
+    if system_path and os.path.exists(system_path):
+        return system_path
 
-#     if not is_running_in_cloud():
-#         # Running locally, use the staticfiles directory
-#         stockfish_file = STOCKFISH_FILES[0]
-#         local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
-#         if os.path.exists(local_path):
-#             print(f"Using local Stockfish: {local_path}")
-#             return local_path
-#         else:
-#             raise FileNotFoundError(
-#                 f"Local Stockfish binary not found at {local_path}")
+    common_linux_paths = ['/usr/games/stockfish', '/usr/bin/stockfish', '/usr/local/bin/stockfish']
+    for p in common_linux_paths:
+        if os.path.exists(p):
+            return p
 
-#     # Running in cloud, use /tmp for App Engine
-#     stockfish_file = STOCKFISH_FILES[1]
-#     cloud_path = os.path.join("/tmp", stockfish_file)
+    # 3. Bundled static binary based on OS
+    if platform.system() == 'Windows':
+        stockfish_file = os.environ.get('STOCKFISH_FILE', 'stockfish-windows-x86-64-avx2.exe')
+    else:
+        stockfish_file = os.environ.get('STOCKFISH_FILE', 'stockfish-ubuntu-x86-64-avx2')
 
-#     if not os.path.exists(cloud_path):  # Download only if not already present
-#         file_url = BUCKET_URL + stockfish_file
-#         print(f"Downloading Stockfish: {file_url}")
-#         urllib.request.urlretrieve(file_url, cloud_path)
-#         os.chmod(cloud_path, 0o755)  # Make it executable
+    bundled_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
+    if os.path.exists(bundled_path):
+        _ensure_executable(bundled_path)
+        return bundled_path
 
-#     return cloud_path  # Return the path of the downloaded file
-
-
-# engine_path = download_stockfish()
-engine = None
+    raise FileNotFoundError(
+        f"Stockfish binary not found. Checked system PATH and {bundled_path}."
+    )
 
 
 def get_engine():
-    # if is_running_in_cloud():
-    #     stockfish_path = os.path.expanduser(
-    #         "~/stockfish/stockfish-ubuntu-x86-64-avx2")
-    #     stockfish = Stockfish(stockfish_path)
-    #     return stockfish
-    # else:
-    stockfish_file = os.environ.get(
-        'STOCKFISH_FILE', "stockfish-windows-x86-64-avx2.exe")
-    local_path = os.path.join(LOCAL_STOCKFISH_PATH, stockfish_file)
-    return chess.engine.SimpleEngine.popen_uci(local_path)
+    """Return an active SimpleEngine instance, starting one if needed."""
+    global _engine
+    if _engine is not None:
+        try:
+            # Quick ping to verify process is still alive and responsive
+            _engine.ping()
+            return _engine
+        except Exception:
+            cleanup_engine()
+
+    stockfish_path = get_stockfish_path()
+    _engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
+    return _engine
 
 
 def cleanup_engine():
-    if engine is not None:
+    global _engine
+    if _engine is not None:
         try:
-            engine.quit()
+            _engine.quit()
         except Exception:
             pass
+        _engine = None
 
 
 board = chess.Board()
+atexit.register(cleanup_engine)

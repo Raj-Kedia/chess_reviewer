@@ -1,4 +1,50 @@
-myenv
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+myenv/
+
+# Databases & local persistent storage
+*.sqlite3
+*.sqlite3-journal
+*.db
+db.sqlite3
+
+# Static files collected by Django / WhiteNoise
+staticfiles/
+
+# Environment variables & secrets
 .env
-__pycache__
-staticfiles
+.env.*
+*.env
+*.key
+*.pem
+*.credentials.json
+service-account*.json
+
+# Django local media & logs
+*.log
+local_settings.py
+media/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

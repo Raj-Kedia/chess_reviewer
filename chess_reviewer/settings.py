@@ -59,13 +59,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Set the JSON content as an environment variable
 # os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"] = credentials_json
-# Fetch your Django secret key from Secret Manager
 SECRET_KEY = os.environ.get(
-    'SECRET_KEY', "l=rlgjubv9^b)1*zwxb@hwsdu&k_r=(xaz$g!d1vd#+@md+mn^")
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+    'SECRET_KEY', "django-insecure-chess-reviewer-default-key-change-in-prod")
 
-ALLOWED_HOSTS = ['*']
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
+
+allowed_hosts_raw = os.environ.get('ALLOWED_HOSTS', '*')
+if allowed_hosts_raw == '*':
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_raw.split(',') if h.strip()]
+
+# Google Cloud Run runs behind a reverse proxy terminating HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Trusted origins for CSRF protection on Cloud Run and local testing
+csrf_origins_raw = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://*.run.app,https://*.appspot.com,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8080'
+)
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in csrf_origins_raw.split(',') if origin.strip()
+]
 
 
 # Application definition
@@ -159,14 +174,15 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-ASE_DIR = Path(__file__).resolve().parent.parent
-
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+# Whitenoise storage for compression and caching
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

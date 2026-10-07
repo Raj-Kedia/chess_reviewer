@@ -2,11 +2,12 @@ from .prase_pgn import *
 from .evaluate_positions import *
 from .classifications import *
 from .openings import *
-from .engine import *
-engine = get_engine()
+from .engine import get_engine
 
 
 def analyze_pgn(moves, metadata, depthValue):
+    engine = get_engine()
+    board = chess.Board()
     analysis = []
     results = {}
     classfication_index = {
@@ -31,7 +32,6 @@ def analyze_pgn(moves, metadata, depthValue):
         for key, value in metadata.items():
             if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
                 results[key] = value
-        board.reset()
         for move in moves:
             try:
                 best_move = engine.play(
