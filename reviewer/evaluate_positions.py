@@ -11,7 +11,7 @@ def evaluate_position(board: chess.Board, depthValue: int) -> float:
     if "score" not in info:
         return 0
 
-    score = info["score"].relative
+    score = info["score"].white()
     if score is None:
         return 0
 

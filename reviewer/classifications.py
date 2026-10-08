@@ -16,45 +16,47 @@ classifications = {
 }
 
 
-def classify_move(eval_loss, best_move, played_move, played_move_eval, prev_move_class, depthValue):
-    if len(list(board.legal_moves)) == 1 and best_move == played_move:
+def classify_move(board, played_move, best_move, eval_before, eval_after, eval_best, prev_move_class):
+    if len(list(board.legal_moves)) == 1 and played_move == best_move:
         return classifications["forced"]
-    if isinstance(best_move, str):
-        best_move = chess.Move.from_uci(best_move)
 
-    if best_move in board.legal_moves:
-        board.push(best_move)
-        best_move_eval = evaluate_position(
-            board, depthValue)
-        board.pop()
-    else:
-        best_move_eval = float("-inf")
-    prev_eval = (eval_loss+played_move_eval)
-    gain_best = best_move_eval - prev_eval
-    gain_played = played_move_eval - prev_eval
-    if gain_played < gain_best and eval_loss <= -500:
+    eval_loss = eval_best - eval_after
+
+    # Brilliant: Heuristic for moves that improve position evaluation significantly
+    if eval_after - eval_before >= 300:
         return classifications["brilliant"]
 
-    if played_move == best_move:
-        if eval_loss <= -150:
-            return classifications["great"]
-        return classifications["best"]
-    if eval_loss <= -50:
-        return classifications['excellent']
-    if -50 <= eval_loss <= 0:
-        return classifications['good']
-    if board.is_capture(best_move) and not board.is_capture(played_move) and eval_loss > 0:
-        return classifications["miss"]
-    if eval_loss >= 50:
-        return classifications["inaccuracy"]
+    # Great: Best move that significantly improves the position
+    if played_move == best_move and eval_after - eval_before >= 100:
+        return classifications["great"]
 
+    # Best: Played the engine's best move
+    if played_move == best_move:
+        return classifications["best"]
+
+    # Miss: Missed a tactical opportunity (best move is a capture, but played move was not, and resulted in a significant loss)
+    if board.is_capture(best_move) and not board.is_capture(played_move) and eval_loss >= 100:
+        return classifications["miss"]
+
+    # Blunder: Major mistake (loss of > 3.0 pawns)
+    if eval_loss >= 300:
+        if prev_move_class and prev_move_class in {"Best", "Great", "Brilliant", "Excellent", "Book", "Forced"}:
+            if eval_before <= -600 or eval_after >= 600:
+                return classifications["mistake"]
+            return classifications["blunder"]
+        return classifications["blunder"]
+
+    # Mistake: Medium mistake (loss of 1.0 to 3.0 pawns)
     if eval_loss >= 100:
         return classifications["mistake"]
 
-    if prev_move_class and prev_move_class in {"Best", "Great", "Brilliant", "Excellent", "Book", "Forced"} and eval_loss >= 300:
-        if prev_eval <= -600:
-            return classifications["mistake"]
-        if played_move_eval >= 600:
-            return classifications["mistake"]
-        return classifications["blunder"]
+    # Inaccuracy: Minor mistake (loss of 0.5 to 1.0 pawns)
+    if eval_loss >= 50:
+        return classifications["inaccuracy"]
+
+    # Excellent: Very good move (loss of <= 0.2 pawns)
+    if eval_loss <= 20:
+        return classifications["excellent"]
+
+    # Good: Fine move (loss of 0.2 to 0.5 pawns)
     return classifications["good"]

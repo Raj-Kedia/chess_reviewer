@@ -10,7 +10,7 @@ from .serializer import *
 from django.db import connection
 from .engine import *
 from .pagination import *
-from .prase_pgn import *
+from .parse_pgn import *
 from .analyze import *
 import atexit
 

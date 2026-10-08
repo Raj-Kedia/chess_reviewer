@@ -114,11 +114,13 @@ class FetchGameView(APIView):
                 if response.status_code != 200:
                     return Response({"error": "Invalid username or private username."}, status=status.HTTP_400_BAD_REQUEST)
 
+                trimmed_text = response.text.strip()
+                if not trimmed_text:
+                    return Response({"error": "No game found"}, status=status.HTTP_404_NOT_FOUND)
+
                 try:
                     games_data = [json.loads(
-                        line) for line in response.text.strip().split("\n")]
-                    if len(games_data) == 0:
-                        return Response({"error": "No game found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        line) for line in trimmed_text.split("\n")]
                 except ValueError:
                     return Response({"error": "Invalid JSON response from Lichess.org"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
