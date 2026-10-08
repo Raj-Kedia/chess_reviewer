@@ -15,14 +15,20 @@ jobs:
     name: Build & Deploy to Cloud Run
     runs-on: ubuntu-latest
 
+    # Required permissions for Workload Identity Federation (Keyless Auth)
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: 'projects/101589719561/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@project-779f14c7-956f-4fdd-b95.iam.gserviceaccount.com'
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
