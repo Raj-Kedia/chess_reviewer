@@ -19,89 +19,98 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
 
 {% endblock %} {% block body %}
-<div class="container my-4">
+<div class="reviewer-page-wrapper">
   <div class="reviewer-layout">
     <div id="game-container">
-    <div class="card" id="0-black">
-      <div class="card-body" id="0-username">Black Player</div>
-    </div>
-
-    <div id="board-container">
-      <div id="board"></div>
-      <canvas id="arrowCanvas"></canvas>
-    </div>
-
-    <div class="card" id="player-1">
-      <div class="card-body" id="1-username">White Player</div>
-    </div>
-  </div>
-  <div id="loader-overlay">
-    <div class="loader"></div>
-  </div>
-  <div class="review-panel">
-    <div id="pgnStatus" class="alert alert-success">
-      PGN parsed successfully!
-    </div>
-
-    <div id="analyzeWindow" class="analyze-panel d-flex flex-column justify-content-center align-items-stretch">
-      <h3 class="mb-4 text-center">Analyze Your Game!</h3>
-      <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <label for="depthSlider" class="form-label mb-0"><strong>Depth:</strong></label>
-          <span id="depthValue" class="badge bg-secondary fs-6">15</span>
+      <div class="card player-card" id="0-black">
+        <div class="card-body" id="0-username">
+          <img src="{% static 'media/pawn_profile.svg' %}" alt="profile" width="28" height="28" class="player-avatar">
+          <span class="player-label">Black Player</span>
         </div>
-        <input
-          type="range"
-          id="depthSlider"
-          min="10"
-          max="30"
-          value="15"
-          step="1"
-          class="form-range"
-        />
       </div>
-      <button class="btn btn-success w-100 py-2" id="analyzebutton">
-        Analyze
-      </button>
-    </div>
 
-    <div id="moveHistoryWindow" class="move-list hidden">
-      <h3>Move History</h3>
-      <div id="opening_name"></div>
-      <div id="moveDetails"></div>
-      <div class="controls">
-        <button id="flipBoard" title="Flip Board">
-          <i class="fa fa-retweet"></i>
-        </button>
-        <button id="startPosition" title="Go to Start">
-          <i class="fa fa-fast-backward"></i>
-        </button>
-        <button id="undoMove" title="Undo">
-          <i class="fa fa-backward"></i>
-        </button>
-        <button id="redoMove" title="Redo">
-          <i class="fa fa-forward"></i>
-        </button>
-        <button id="endPosition" title="Go to Last">
-          <i class="fa fa-fast-forward"></i>
-        </button>
+      <div id="board-container">
+        <div id="board"></div>
+        <canvas id="arrowCanvas"></canvas>
+      </div>
+
+      <div class="card player-card" id="player-1">
+        <div class="card-body" id="1-username">
+          <img src="{% static 'media/pawn_profile.svg' %}" alt="profile" width="28" height="28" class="player-avatar">
+          <span class="player-label">White Player</span>
+        </div>
       </div>
     </div>
 
-    <div id="resultWindow" class="analyze-panel">
-      <h2>Game Analysis Summary</h2>
+    <div class="review-panel">
+      <div id="pgnStatus" class="alert alert-success">
+        PGN parsed successfully!
+      </div>
 
-      <div id="gameSummary" class="summary-panel"></div>
-      <div class="d-flex gap-2 justify-content-center mt-3">
-        <button class="btn btn-primary" id="toggleReview" disabled>
-          Review Moves
-        </button>
-        <button class="btn btn-secondary" id="backToAnalyze">
-          Change Depth
+      <div id="analyzeWindow" class="analyze-panel">
+        <h3 class="mb-4 text-center">Analyze Your Game!</h3>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="depthSlider" class="form-label mb-0"><strong>Depth:</strong></label>
+            <span id="depthValue" class="badge bg-secondary fs-6">15</span>
+          </div>
+          <input
+            type="range"
+            id="depthSlider"
+            min="10"
+            max="30"
+            value="15"
+            step="1"
+            class="form-range"
+          />
+        </div>
+        <button class="btn btn-success w-100 py-2" id="analyzebutton">
+          Analyze
         </button>
       </div>
+
+      <div id="moveHistoryWindow" class="move-list hidden">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="m-0">Move History</h3>
+          <button class="btn btn-sm btn-outline-secondary" id="viewSummaryBtn" title="View Summary">
+            <i class="fa fa-chart-pie me-1"></i>Summary
+          </button>
+        </div>
+        <div id="opening_name"></div>
+        <div id="moveDetails"></div>
+        <div class="controls">
+          <button id="flipBoard" title="Flip Board (F)">
+            <i class="fa fa-retweet"></i>
+          </button>
+          <button id="startPosition" title="Go to Start (Up)">
+            <i class="fa fa-fast-backward"></i>
+          </button>
+          <button id="undoMove" title="Undo (Left)">
+            <i class="fa fa-backward"></i>
+          </button>
+          <button id="redoMove" title="Redo (Right)">
+            <i class="fa fa-forward"></i>
+          </button>
+          <button id="endPosition" title="Go to Last (Down)">
+            <i class="fa fa-fast-forward"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="resultWindow" class="analyze-panel hidden">
+        <h2>Game Analysis Summary</h2>
+
+        <div id="gameSummary" class="summary-panel"></div>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+          <button class="btn btn-primary" id="toggleReview" disabled>
+            Review Moves
+          </button>
+          <button class="btn btn-secondary" id="backToAnalyze">
+            Change Depth
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
   </div>
 </div>
 <script src="{% static 'js_files/reviewer.js' %}" defer></script>

@@ -1,0 +1,121 @@
+/* ==========================================================
+   Chess Reviewer - Global Responsive & Aesthetic Styles
+   ========================================================== */
+
+:root {
+    --primary-color: #0d6efd;
+    --primary-hover: #0b5ed7;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --nav-height: 64px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-primary);
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    overflow-x: clip;
+}
+
+/* Navbar Enhancements */
+.navbar {
+    min-height: var(--nav-height);
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    transition: all 0.2s ease;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary) !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.3px;
+}
+
+.navbar-brand img {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.navbar-brand:hover img {
+    transform: rotate(15deg) scale(1.08);
+}
+
+.nav-link {
+    font-weight: 500;
+    color: var(--text-secondary) !important;
+    padding: 8px 16px !important;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-color) !important;
+    background: rgba(13, 110, 253, 0.06);
+}
+
+/* Responsive Floating Alerts */
+#floatingAlert {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    width: auto !important;
+    min-width: 280px !important;
+    max-width: min(92vw, 440px) !important;
+    z-index: 10050 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.18), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    animation: alertSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes alertSlideIn {
+    0% {
+        transform: translateY(-16px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    #floatingAlert {
+        top: 12px !important;
+        right: 12px !important;
+        left: 12px !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    .navbar-nav {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .nav-link {
+        padding: 10px 14px !important;
+    }
+}

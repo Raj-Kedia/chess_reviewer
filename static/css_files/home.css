@@ -1,46 +1,12 @@
-#loader-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    display: none;
-}
-
-.loader {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid #3498db;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-body.loading {
-    overflow: hidden;
-    pointer-events: none;
-}
+/* ==========================================================
+   Home Page Styles - Responsive & Modern Aesthetic
+   ========================================================== */
 
 .home-container {
-    min-height: calc(100vh - 56px); /* Subtract navbar height to avoid scrollbar */
-    padding: 40px 20px;
+    min-height: calc(100vh - var(--nav-height, 64px));
+    padding: clamp(20px, 5vh, 48px) clamp(12px, 3vw, 24px);
     box-sizing: border-box;
-    background: radial-gradient(circle at 50% 50%, #f8f9fa 0%, #e9ecef 100%);
+    background: radial-gradient(circle at 50% 20%, #f8fafc 0%, #e2e8f0 100%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -48,34 +14,247 @@ body.loading {
 
 .home-card {
     background: #ffffff;
-    border-radius: 16px;
-    padding: 40px;
-    max-width: 560px;
+    border-radius: 20px;
+    padding: clamp(24px, 5vw, 44px) clamp(16px, 4vw, 36px);
+    max-width: 580px;
     width: 100%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 8px rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .home-logo {
     transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.08));
 }
 
 .home-logo:hover {
-    transform: rotate(360deg) scale(1.05);
+    transform: rotate(360deg) scale(1.08);
 }
 
 .home-title {
     font-weight: 800;
-    color: #212529;
-    letter-spacing: -0.5px;
+    color: #0f172a;
+    letter-spacing: -0.6px;
+    font-size: clamp(1.5rem, 4vw, 2rem);
 }
 
 .home-subtitle {
-    font-size: 0.95rem;
-    color: #6c757d;
+    font-size: clamp(0.88rem, 2.4vw, 0.98rem);
+    color: #64748b;
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.5;
 }
 
 .home-form {
     width: 100%;
     margin: 0 auto;
+}
+
+/* Modern Input Group */
+.home-form .input-group {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    overflow: visible;
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.home-form #inputField {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-color: #cbd5e1;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.home-form #inputField:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.home-form #dropdownMenuButton {
+    border-color: #cbd5e1;
+    background-color: #f1f5f9;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    border-radius: 0;
+    transition: all 0.2s;
+}
+
+.home-form #dropdownMenuButton:hover,
+.home-form #dropdownMenuButton:focus {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.home-form #fetchButton {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-color: #cbd5e1;
+    border-left: none;
+    padding: 0 16px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2563eb;
+    background-color: #eff6ff;
+    transition: all 0.2s ease;
+}
+
+.home-form #fetchButton:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+/* If fetchButton is hidden, round dropdown button right edges */
+.home-form #fetchButton.d-none + #dropdownMenuButton,
+.home-form #dropdownMenuButton:last-child {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+/* Selected Game Notice */
+#selectedGameContainer {
+    margin-top: 8px;
+    width: 100%;
+}
+
+#selectedGameText {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    word-break: break-word;
+    margin-bottom: 0;
+}
+
+/* Parse PGN Button */
+#parsePGNButton {
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.2px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#parsePGNButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+#parsePGNButton:active {
+    transform: translateY(0);
+}
+
+/* Game Modal Responsiveness */
+#gameModal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+#gameModal .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 18px 24px;
+}
+
+#gameModal .modal-title {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: clamp(1.1rem, 3vw, 1.25rem);
+}
+
+#gameModal .modal-body {
+    padding: clamp(14px, 3vw, 24px);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#gameList .list-group-item {
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+#gameList .list-group-item:hover {
+    background-color: #f8fafc;
+    border-color: #93c5fd;
+    transform: translateX(2px);
+}
+
+#gameList .list-group-item input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#gameList .list-group-item label {
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 576px) {
+    .home-container {
+        padding: 16px 12px;
+        align-items: flex-start;
+        padding-top: 24px;
+    }
+
+    .home-card {
+        padding: 24px 16px;
+        border-radius: 16px;
+    }
+
+    .home-logo {
+        width: 64px;
+        height: 64px;
+    }
+
+    .home-form #inputField {
+        font-size: 0.9rem;
+        padding: 10px 12px;
+    }
+
+    .home-form #dropdownMenuButton {
+        padding: 0 10px;
+        font-size: 0.85rem;
+    }
+
+    .home-form #fetchButton {
+        padding: 0 12px;
+    }
+
+    #gameModal .modal-dialog {
+        margin: 10px;
+    }
 }

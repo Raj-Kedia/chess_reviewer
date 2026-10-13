@@ -18,50 +18,54 @@
     </div>
 
     <div class="row mt-4 justify-content-center">
-        <div class="col-lg-8 text-center">
-            <h2>Our Mission</h2>
-            <p>
-                Chess Reviewer is built to help players refine their strategies with precise move evaluation, 
-                mistake detection, and optimal move recommendations. Our platform integrates powerful AI-driven
-                analysis, making chess learning and reviewing easier than ever.
-            </p>
-        </div>
-    </div>
-
-    <div class="row mt-5 justify-content-center">
-        <div class="col-lg-8 text-center">
-            <h2>Meet the Creator</h2>
-            <p>
-                Hi, I'm <strong>Raj Kedia</strong>, the creator of Chess Reviewer. As a final-year B.Tech student 
-                at NIT Meghalaya and a passionate developer, I built this platform to help chess enthusiasts 
-                understand their games better. My goal was to integrate AI-powered move analysis and provide 
-                a user-friendly interface for reviewing chess matches.
-            </p>
-            <p>
-                With experience in web development, I ensure that Chess Reviewer 
-                keeps improving with new features and better accuracy.
-            </p>
-
-            <!-- Social Media Icons -->
-            <div class="social-links d-flex justify-content-center gap-3">
-                <a href="https://www.facebook.com/Rajkedia19/" target="_blank" class="social-icon">
-                    <img src="{% static 'media/facebook.svg' %}" alt="Facebook">
-                </a>
-                <a href="https://www.instagram.com/rajkedia19/" target="_blank" class="social-icon">
-                    <img src="{% static 'media/instagram.svg' %}" alt="Instagram">
-                </a>
-                <a href="https://www.linkedin.com/in/rajkedia19" target="_blank" class="social-icon">
-                    <img src="{% static 'media/linkedin.svg' %}" alt="LinkedIn">
-                </a>
-                <a href="https://github.com/Raj-Kedia" target="_blank" class="social-icon">
-                    <img src="{% static 'media/github.svg' %}" alt="GitHub">
-                </a>
+        <div class="col-lg-8">
+            <div class="about-card text-center">
+                <h2>Our Mission</h2>
+                <p>
+                    Chess Reviewer is built to help players refine their strategies with precise move evaluation, 
+                    mistake detection, and optimal move recommendations. Our platform integrates powerful AI-driven
+                    analysis, making chess learning and reviewing easier than ever.
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="text-center mt-5">
-        <a href="{% url 'contact' %}" class="btn btn-primary">Any suggestions</a>
+    <div class="row mt-2 justify-content-center">
+        <div class="col-lg-8">
+            <div class="about-card text-center">
+                <h2>Meet the Creator</h2>
+                <p>
+                    Hi, I'm <strong>Raj Kedia</strong>, the creator of Chess Reviewer. As a final-year B.Tech student 
+                    at NIT Meghalaya and a passionate developer, I built this platform to help chess enthusiasts 
+                    understand their games better. My goal was to integrate AI-powered move analysis and provide 
+                    a user-friendly interface for reviewing chess matches.
+                </p>
+                <p>
+                    With experience in web development, I ensure that Chess Reviewer 
+                    keeps improving with new features and better accuracy.
+                </p>
+
+                <!-- Social Media Icons -->
+                <div class="social-links d-flex justify-content-center gap-3">
+                    <a href="https://www.facebook.com/Rajkedia19/" target="_blank" class="social-icon" aria-label="Facebook">
+                        <img src="{% static 'media/facebook.svg' %}" alt="Facebook">
+                    </a>
+                    <a href="https://www.instagram.com/rajkedia19/" target="_blank" class="social-icon" aria-label="Instagram">
+                        <img src="{% static 'media/instagram.svg' %}" alt="Instagram">
+                    </a>
+                    <a href="https://www.linkedin.com/in/rajkedia19" target="_blank" class="social-icon" aria-label="LinkedIn">
+                        <img src="{% static 'media/linkedin.svg' %}" alt="LinkedIn">
+                    </a>
+                    <a href="https://github.com/Raj-Kedia" target="_blank" class="social-icon" aria-label="GitHub">
+                        <img src="{% static 'media/github.svg' %}" alt="GitHub">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'contact' %}" class="btn btn-primary about-btn-action">Any suggestions</a>
     </div>
 </div>
 

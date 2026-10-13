@@ -32,7 +32,7 @@ def analyze_pgn(moves, metadata, depthValue):
     
     try:
         for key, value in metadata.items():
-            if key in ['White', 'Black', 'BlackElo', 'WhiteElo']:
+            if key in ['White', 'Black', 'BlackElo', 'WhiteElo', 'Result', 'Termination']:
                 results[key] = value
         board.reset()
         score_white_before = evaluate_position(board, depthValue)

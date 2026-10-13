@@ -20,13 +20,6 @@ function showAlert(message, type = "primary") {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    alertDiv.style.position = "fixed";
-    alertDiv.style.top = "20px";
-    alertDiv.style.right = "20px";
-    alertDiv.style.width = "25%";
-    alertDiv.style.zIndex = "1050";
-    alertDiv.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
-
     document.body.appendChild(alertDiv);
 
     setTimeout(() => {
@@ -89,9 +82,19 @@ async function fetchGame(firstRequest = true) {
         return;
     }
 
-    const loaderOverlay = document.getElementById("loader-overlay");
-    loaderOverlay.style.display = "flex";
-    document.body.classList.add("loading");
+    if (firstRequest) {
+        window.showChessLoader(
+            "Fetching Games",
+            `Fetching recent matches for "${username}" from ${selectedPlatform}...`,
+            "Connecting"
+        );
+    } else {
+        window.showChessLoader(
+            "Loading More Games",
+            `Retrieving additional matches for "${username}" from ${selectedPlatform}...`,
+            "Loading"
+        );
+    }
 
     if (firstRequest) {
         cursor = null;
@@ -110,7 +113,10 @@ async function fetchGame(firstRequest = true) {
         }
     }
 
-    if (!nextPageUrl) return;
+    if (!nextPageUrl) {
+        window.hideChessLoader();
+        return;
+    }
 
     const requestData = firstRequest
         ? { username: username, platform: selectedPlatform }
@@ -130,8 +136,7 @@ async function fetchGame(firstRequest = true) {
 
         if (!data || !data.results) {
             showAlert("Invalid response from server: " + (data ? data.error : "unknown error"), "danger");
-            loaderOverlay.style.display = "none";
-            document.body.classList.remove("loading");
+            window.hideChessLoader();
             return;
         }
 
@@ -149,13 +154,11 @@ async function fetchGame(firstRequest = true) {
         }
     } catch (error) {
         showAlert("Error fetching games: " + error, "danger");
-        loaderOverlay.style.display = "none";
-        document.body.classList.remove("loading");
+        window.hideChessLoader();
     }
     setTimeout(() => {
-        loaderOverlay.style.display = "none";
-        document.body.classList.remove("loading");
-    });
+        window.hideChessLoader();
+    }, 200);
 }
 
 function displayGames(newGames) {
@@ -350,6 +353,7 @@ function parsePGN() {
             showAlert("No PGN provided!", "danger");
             return;
         }
+        window.showChessLoader("Preparing Reviewer", "Loading game board and move history...", "Loading");
         localStorage.setItem("pgnData", selectedPGN);
         window.location.href = "/reviewer/";
 
@@ -360,6 +364,7 @@ function parsePGN() {
             return;
         }
         if (!checkPGNJSON(selectedPGN)) return;
+        window.showChessLoader("Preparing Reviewer", "Parsing PGN notation and initializing board...", "Loading");
         localStorage.setItem("pgnData", selectedPGN);
         window.location.href = "/reviewer/";
 
@@ -370,6 +375,7 @@ function parsePGN() {
             return;
         }
         if (!checkPGNJSON(json_data)) return;
+        window.showChessLoader("Preparing Reviewer", "Parsing JSON game data...", "Loading");
         localStorage.setItem("pgnData", json_data);
         window.location.href = "/reviewer/";
     }
