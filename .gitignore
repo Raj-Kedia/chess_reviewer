@@ -34,7 +34,7 @@ service-account*.json
 # Django local media & logs
 *.log
 local_settings.py
-media/
+/media/
 
 # OS generated files
 .DS_Store

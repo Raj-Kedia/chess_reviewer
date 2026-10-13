@@ -336,7 +336,7 @@ const classificationArrowColors = {
 function getIcon(classification) {
     const fileName = icons[classification];
     if (!fileName) return "";
-    return `<img src="/static/media/${fileName}?v=3" alt="${classification}" class="move-icon">`;
+    return `<img src="/static/media/${fileName}?v=20261013v2" alt="${classification}" class="move-icon">`;
 }
 
 function displayAnalysis(analysisData) {
@@ -438,7 +438,7 @@ function addClassificationIcon(idx, move, classification) {
 
     const icon = document.createElement("img");
     icon.className = "classification-icon";
-    icon.src = `/static/media/${fileName}?v=3`;
+    icon.src = `/static/media/${fileName}?v=20261013v2`;
     icon.alt = classification;
     squareElement.appendChild(icon);
 }
@@ -452,7 +452,7 @@ function addGameOverKingIcon(square, iconSrc, title) {
 
     const icon = document.createElement("img");
     icon.className = "game-over-icon";
-    icon.src = `${iconSrc}?v=3`;
+    icon.src = `${iconSrc}?v=20261013v2`;
     icon.alt = title;
     icon.title = title;
     squareElement.appendChild(icon);

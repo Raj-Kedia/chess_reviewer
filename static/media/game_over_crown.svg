@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <defs>
+    <radialGradient id="goldGrad" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </radialGradient>
+  </defs>
+  <circle cx="30" cy="30" r="27" fill="#1e293b" stroke="#eab308" stroke-width="2.5"/>
+  <path d="M16 41 L44 41 L42 25 L34 32 L30 18 L26 32 L18 25 Z" fill="url(#goldGrad)" stroke="#78350f" stroke-width="1.2" stroke-linejoin="round"/>
+  <circle cx="17" cy="24" r="2.2" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+  <circle cx="30" cy="17" r="2.6" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+  <circle cx="43" cy="24" r="2.2" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+  <rect x="18" y="38" width="24" height="3" rx="1.5" fill="#ca8a04"/>
+  <circle cx="24" cy="39.5" r="1" fill="#fef08a"/>
+  <circle cx="30" cy="39.5" r="1" fill="#fef08a"/>
+  <circle cx="36" cy="39.5" r="1" fill="#fef08a"/>
+</svg>
